@@ -41,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import com.music.innertube.YouTube
@@ -54,6 +55,9 @@ import com.music.vivi.utils.rememberPreference
 import com.music.vivi.viewmodels.AccountSettingsViewModel
 import com.music.vivi.viewmodels.HomeViewModel
 import com.music.vivi.R
+import com.music.vivi.wear.WearAuthSyncHelper
+import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.launch
 private enum class AccountTab {
     RECOMMENDED,
     ALL_SERVICES
@@ -90,6 +94,28 @@ fun AccountSettingsScreen(
     var showTokenEditor by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf(AccountTab.RECOMMENDED) }
+    var isSendingAuthToWatch by remember { mutableStateOf(false) }
+
+    // Create WearAuthSyncHelper instance
+    val wearAuthSyncHelper = remember { WearAuthSyncHelper(context) }
+    val coroutineScope = rememberCoroutineScope()
+
+    // Function to send auth to watch
+    suspend fun sendAuthToWatch() {
+        isSendingAuthToWatch = true
+        try {
+            val success = wearAuthSyncHelper.sendAuthToWatch(
+                cookie = innerTubeCookie,
+                visitorData = visitorData,
+                dataSyncId = dataSyncId
+            )
+            wearAuthSyncHelper.showAuthSyncResult(success)
+        } catch (e: Exception) {
+            wearAuthSyncHelper.showAuthSyncResult(false)
+        } finally {
+            isSendingAuthToWatch = false
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -301,7 +327,20 @@ fun AccountSettingsScreen(
                             Material3SettingsItem(
                                 icon = painterResource(R.drawable.logout),
                                 title = { Text(stringResource(R.string.action_logout)) },
-                                onClick = { showLogoutDialog = true }
+                                onClick = { showLogoutDialog = true },
+                                isExpressive = true
+                            ),
+                            Material3SettingsItem(
+                                icon = painterResource(R.drawable.settings), // Using settings icon as placeholder
+                                title = { Text("Send login to watch") },
+                                onClick = {
+                                    // Launch coroutine to send auth to watch
+                                    coroutineScope.launch {
+                                        sendAuthToWatch()
+                                    }
+                                },
+                                enabled = isLoggedIn && !isSendingAuthToWatch,
+                                isExpressive = true
                             )
                         )
                     )
