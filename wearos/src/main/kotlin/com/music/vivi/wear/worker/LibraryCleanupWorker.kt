@@ -61,7 +61,7 @@ class LibraryCleanupWorker @AssistedInject constructor(
     private suspend fun cleanupOrphanedCache() {
         try {
             // Remove cache entries that don't have corresponding database entries
-            val allDownloads = downloadDao.getAllDownloads()
+            val allDownloads = downloadDao.getAllDownloadsList()
             val downloadIds = allDownloads.map { it.songId }.toSet()
 
             // This is a simplified implementation
@@ -81,7 +81,7 @@ class LibraryCleanupWorker @AssistedInject constructor(
             staleDownloads.forEach { download ->
                 try {
                     downloadManager.removeDownload(download.songId)
-                    downloadDao.deleteDownload(download.songId)
+                    downloadDao.deleteDownloadById(download.songId)
                     Timber.d("Removed stale download: ${download.songId}")
                 } catch (e: Exception) {
                     Timber.e(e, "Failed to remove stale download: ${download.songId}")
@@ -103,17 +103,17 @@ class LibraryCleanupWorker @AssistedInject constructor(
                 Timber.w("Download size ($currentSize bytes) exceeds cap ($sizeCapBytes bytes)")
 
                 // Remove oldest downloads until under the cap
-                val downloads = downloadDao.getAllDownloadsSortedByDate()
+                val downloadsList = downloadDao.getAllDownloadsSortedByDate()
                 var removedCount = 0
 
-                for (download in downloads) {
+                for (download in downloadsList) {
                     if (downloadManager.getTotalDownloadSize() <= sizeCapBytes) {
                         break
                     }
 
                     try {
                         downloadManager.removeDownload(download.songId)
-                        downloadDao.deleteDownload(download.songId)
+                        downloadDao.deleteDownloadById(download.songId)
                         removedCount++
                     } catch (e: Exception) {
                         Timber.e(e, "Failed to remove download for size cap enforcement: ${download.songId}")
@@ -134,7 +134,7 @@ class LibraryCleanupWorker @AssistedInject constructor(
             if (allHistory.size > 100) {
                 val toRemove = allHistory.dropLast(100)
                 toRemove.forEach { history ->
-                    playbackHistoryDao.deleteHistory(history.id)
+                    playbackHistoryDao.deleteHistoryById(history.id)
                 }
                 Timber.d("Cleaned up ${toRemove.size} old playback history entries")
             }

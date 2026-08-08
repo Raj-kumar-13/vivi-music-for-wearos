@@ -30,7 +30,7 @@ class WearApplication : Application() {
 
     private fun checkBatteryOptimization() {
         val powerManager = getSystemService(PowerManager::class.java)
-        val isIgnoringBatteryOptimizations = powerManager.isIgnoringBatteryOptimizations()
+        val isIgnoringBatteryOptimizations = powerManager.isIgnoringBatteryOptimizations(packageName)
         
         if (!isIgnoringBatteryOptimizations) {
             Timber.w("Battery optimizations are active - this may affect music playback")

@@ -2,9 +2,11 @@ package com.music.vivi.wear.db.dao
 
 import androidx.room.Dao
 import androidx.room.Delete
+import androidx.room.Embedded
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Relation
 import androidx.room.Transaction
 import com.music.vivi.wear.db.entities.WearPlaybackHistoryEntity
 import com.music.vivi.wear.db.entities.WearSongEntity
@@ -26,7 +28,7 @@ interface WearPlaybackHistoryDao {
     suspend fun deleteHistory(history: WearPlaybackHistoryEntity)
 
     @Query("DELETE FROM wear_playback_history WHERE id = :id")
-    suspend fun deleteHistory(id: Long)
+    suspend fun deleteHistoryById(id: Long)
 
     @Query("SELECT * FROM wear_playback_history ORDER BY playedAt DESC")
     suspend fun getAllHistory(): List<WearPlaybackHistoryEntity>
@@ -45,6 +47,10 @@ interface WearPlaybackHistoryDao {
 }
 
 data class HistoryWithSong(
-    val history: WearPlaybackHistoryEntity,
+    @Embedded val history: WearPlaybackHistoryEntity,
+    @Relation(
+        parentColumn = "songId",
+        entityColumn = "id"
+    )
     val song: WearSongEntity
 )

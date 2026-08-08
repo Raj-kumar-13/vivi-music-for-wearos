@@ -23,7 +23,7 @@ import com.music.vivi.wear.db.entities.WearSongEntity
         WearPlaybackHistoryEntity::class
     ],
     version = 1,
-    exportSchema = true
+    exportSchema = false
 )
 abstract class WearMusicDatabase : RoomDatabase() {
     abstract fun songDao(): WearSongDao

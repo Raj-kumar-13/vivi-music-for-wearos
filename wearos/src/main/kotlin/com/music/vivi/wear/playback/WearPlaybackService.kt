@@ -47,13 +47,13 @@ class WearPlaybackService : MediaSessionService() {
             .build()
 
         // Apply Horologist's Bluetooth audio enforcement
-        audioOutputSelector.connect(player)
+        // audioOutputSelector.connect(player) // connect() not available in this Horologist version
 
         mediaSession = MediaSession.Builder(this, player)
             .setCallback(WearSessionCallback())
             .build()
 
-        errorReporter.connect()
+        // errorReporter.connect() // connect() not available in this Horologist version
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession {
@@ -61,8 +61,8 @@ class WearPlaybackService : MediaSessionService() {
     }
 
     override fun onDestroy() {
-        errorReporter.disconnect()
-        audioOutputSelector.disconnect()
+        // errorReporter.disconnect()
+        // audioOutputSelector.disconnect()
         mediaSession.release()
         player.release()
         super.onDestroy()

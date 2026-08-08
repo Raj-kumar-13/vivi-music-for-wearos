@@ -2,10 +2,14 @@ package com.music.vivi.wear.db.dao
 
 import androidx.room.Dao
 import androidx.room.Delete
+import androidx.room.Embedded
 import androidx.room.Insert
+import androidx.room.Junction
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Relation
 import androidx.room.Transaction
+import androidx.room.Update
 import com.music.vivi.wear.db.entities.WearPlaylistEntity
 import com.music.vivi.wear.db.entities.WearPlaylistSongMap
 import com.music.vivi.wear.db.entities.WearSongEntity
@@ -15,6 +19,13 @@ import kotlinx.coroutines.flow.Flow
 interface WearPlaylistDao {
     @Query("SELECT * FROM wear_playlist")
     fun getAllPlaylists(): Flow<List<WearPlaylistEntity>>
+
+    @Transaction
+    @Query("""
+        SELECT p.*, (SELECT COUNT(*) FROM wear_playlist_song_map WHERE playlistId = p.id) as songCount 
+        FROM wear_playlist p
+    """)
+    fun getAllPlaylistsWithCount(): Flow<List<PlaylistWithCount>>
 
     @Query("SELECT * FROM wear_playlist WHERE id = :playlistId")
     suspend fun getPlaylistById(playlistId: String): WearPlaylistEntity?
@@ -49,6 +60,20 @@ interface WearPlaylistDao {
 }
 
 data class PlaylistWithSongs(
-    val playlist: WearPlaylistEntity,
+    @Embedded val playlist: WearPlaylistEntity,
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "id",
+        associateBy = Junction(
+            value = WearPlaylistSongMap::class,
+            parentColumn = "playlistId",
+            entityColumn = "songId"
+        )
+    )
     val songs: List<WearSongEntity>
+)
+
+data class PlaylistWithCount(
+    @Embedded val playlist: WearPlaylistEntity,
+    val songCount: Int
 )

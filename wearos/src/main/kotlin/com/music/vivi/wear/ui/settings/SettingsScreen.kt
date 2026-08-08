@@ -12,13 +12,12 @@ import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.Card
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.ToggleChip
-import androidx.wear.compose.material.ToggleChipDefaults
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.google.android.horologist.compose.layout.ScreenScaffold
 import com.google.android.horologist.compose.layout.ScalingLazyColumn
+import com.google.android.horologist.compose.layout.ScreenScaffold
+import com.google.android.horologist.compose.layout.rememberResponsiveColumnState
 import com.google.android.horologist.compose.layout.ScalingLazyColumnDefaults
-import com.music.vivi.wear.network.StreamingQuality
+import com.music.vivi.wear.ui.components.WearTimeText
 
 @Composable
 fun SettingsScreen(
@@ -30,152 +29,111 @@ fun SettingsScreen(
     val authStatus by viewModel.authStatus.collectAsState()
     val versionInfo by viewModel.versionInfo.collectAsState()
 
-    ScreenScaffold(
-        scrollState = ScalingLazyColumnDefaults.scrollState(),
-        timeText = { TimeText() }
-    ) {
-        item {
-            Text(
-                text = "Settings",
-                style = MaterialTheme.typography.title3,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            )
-        }
+    val columnState = rememberResponsiveColumnState(
+        contentPadding = ScalingLazyColumnDefaults.padding(
+            first = ScalingLazyColumnDefaults.ItemType.Text,
+            last = ScalingLazyColumnDefaults.ItemType.SingleButton,
+        )
+    )
 
-        // Audio Quality Setting
-        item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp)
-            ) {
+    ScreenScaffold(
+        scrollState = columnState,
+        timeText = { WearTimeText() }
+    ) {
+        ScalingLazyColumn(
+            columnState = columnState,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            item {
                 Text(
-                    text = "Audio Quality",
-                    style = MaterialTheme.typography.body2,
-                    modifier = Modifier.padding(8.dp)
+                    text = "Settings",
+                    style = MaterialTheme.typography.title3,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
                 )
-                Text(
-                    text = when (audioQuality) {
-                        StreamingQuality.HIGH -> "High"
-                        StreamingQuality.MEDIUM -> "Medium"
-                        StreamingQuality.LOW -> "Low"
-                        StreamingQuality.OFFLINE -> "Offline"
-                    },
-                    style = MaterialTheme.typography.caption1,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-                Button(
+            }
+
+            // Audio Quality
+            item {
+                Card(
                     onClick = { viewModel.cycleAudioQuality() },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp)
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
                 ) {
-                    Text("Change")
+                    Text(
+                        text = "Streaming Quality",
+                        style = MaterialTheme.typography.caption2
+                    )
+                    Text(
+                        text = audioQuality.name,
+                        style = MaterialTheme.typography.body2
+                    )
                 }
             }
-        }
 
-        // Download Size Cap Setting
-        item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = "Download Size Cap",
-                    style = MaterialTheme.typography.body2,
-                    modifier = Modifier.padding(8.dp)
-                )
-                Text(
-                    text = "${downloadSizeCap}MB",
-                    style = MaterialTheme.typography.caption1,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-                Button(
+            // Download Size Cap
+            item {
+                Card(
                     onClick = { viewModel.cycleDownloadSizeCap() },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp)
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
                 ) {
-                    Text("Change")
+                    Text(
+                        text = "Download Cap",
+                        style = MaterialTheme.typography.caption2
+                    )
+                    Text(
+                        text = "$downloadSizeCap MB",
+                        style = MaterialTheme.typography.body2
+                    )
                 }
             }
-        }
 
-        // Auth Status & Reconnect
-        item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = "Authentication",
-                    style = MaterialTheme.typography.body2,
-                    modifier = Modifier.padding(8.dp)
-                )
-                Text(
-                    text = if (authStatus) "Connected" else "Not connected",
-                    style = MaterialTheme.typography.caption1,
-                    color = if (authStatus) MaterialTheme.colors.primary else MaterialTheme.colors.error,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-                if (!authStatus) {
-                    Button(
-                        onClick = { viewModel.requestAuthReconnect() },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp)
-                    ) {
-                        Text("Reconnect")
-                    }
+            // Auth Status
+            item {
+                Card(
+                    onClick = { viewModel.requestAuthReconnect() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = "Account Status",
+                        style = MaterialTheme.typography.caption2
+                    )
+                    Text(
+                        text = if (authStatus) "Logged In" else "Disconnected",
+                        style = MaterialTheme.typography.body2,
+                        color = if (authStatus) MaterialTheme.colors.primary else MaterialTheme.colors.error
+                    )
                 }
             }
-        }
 
-        // About/Version Info
-        item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp)
-            ) {
+            // Version Info
+            item {
                 Text(
-                    text = "About",
-                    style = MaterialTheme.typography.body2,
-                    modifier = Modifier.padding(8.dp)
-                )
-                Text(
-                    text = "Vivi Wear ${versionInfo}",
-                    style = MaterialTheme.typography.caption1,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-                Text(
-                    text = "Music for Wear OS",
+                    text = "Version: $versionInfo",
                     style = MaterialTheme.typography.caption2,
-                    modifier = Modifier.padding(horizontal = 8.dp, bottom = 8.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
                 )
             }
-        }
 
-        // Back Button
-        item {
-            Button(
-                onClick = onNavigateBack,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            ) {
-                Text("Back")
+            // Back Button
+            item {
+                Button(
+                    onClick = onNavigateBack,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Text("Back")
+                }
             }
         }
     }
-}
-
-@Composable
-fun TimeText() {
-    androidx.wear.compose.material.TimeText()
 }

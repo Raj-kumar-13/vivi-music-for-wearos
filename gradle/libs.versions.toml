@@ -44,8 +44,11 @@ coreSplashscreen = "1.2.0"
 haze = "1.7.2"
 rhino = "1.9.1"
 wearCompose = "1.4.0"
+wearToolingPreview = "1.0.0"
 horologist = "0.7.15"
 playServicesWearable = "18.2.0"
+wearTiles = "1.6.2"
+protolayout = "1.4.2"
 securityCrypto = "1.1.0-alpha06"
 
 
@@ -110,6 +113,8 @@ apache-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "apa
 
 hilt = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
+hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltNavigation" }
+hilt-common-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hiltNavigation" }
 
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
@@ -145,13 +150,18 @@ rhino = { module = "org.mozilla:rhino", version.ref = "rhino" }
 wear-compose-material = { module = "androidx.wear.compose:compose-material", version.ref = "wearCompose" }
 wear-compose-foundation = { module = "androidx.wear.compose:compose-foundation", version.ref = "wearCompose" }
 wear-compose-navigation = { module = "androidx.wear.compose:compose-navigation", version.ref = "wearCompose" }
-wear-tooling-preview = { module = "androidx.wear:wear-tooling-preview", version.ref = "wearCompose" }
+wear-tooling-preview = { module = "androidx.wear:wear-tooling-preview", version.ref = "wearToolingPreview" }
 horologist-media-ui = { module = "com.google.android.horologist:horologist-media-ui", version.ref = "horologist" }
 horologist-media-data = { module = "com.google.android.horologist:horologist-media-data", version.ref = "horologist" }
 horologist-media3-backend = { module = "com.google.android.horologist:horologist-media3-backend", version.ref = "horologist" }
 horologist-audio-ui = { module = "com.google.android.horologist:horologist-audio-ui", version.ref = "horologist" }
 horologist-compose-layout = { module = "com.google.android.horologist:horologist-compose-layout", version.ref = "horologist" }
 horologist-network-awareness = { module = "com.google.android.horologist:horologist-network-awareness", version.ref = "horologist" }
+horologist-tiles = { module = "com.google.android.horologist:horologist-tiles", version.ref = "horologist" }
+horologist-networks-ui = { module = "com.google.android.horologist:horologist-network-awareness-ui", version.ref = "horologist" }
+androidx-wear-tiles = { module = "androidx.wear.tiles:tiles", version.ref = "wearTiles" }
+androidx-protolayout-expression = { module = "androidx.wear.protolayout:protolayout-expression", version.ref = "protolayout" }
+androidx-protolayout-material = { module = "androidx.wear.protolayout:protolayout-material", version.ref = "protolayout" }
 play-services-wearable = { module = "com.google.android.gms:play-services-wearable", version.ref = "playServicesWearable" }
 security-crypto = { module = "androidx.security:security-crypto", version.ref = "securityCrypto" }
 

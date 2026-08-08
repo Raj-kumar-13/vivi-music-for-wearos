@@ -1,6 +1,7 @@
 package com.music.vivi.wear.data
 
 import com.music.innertube.YouTube
+import com.music.vivi.wear.auth.WearAuthStorage
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton

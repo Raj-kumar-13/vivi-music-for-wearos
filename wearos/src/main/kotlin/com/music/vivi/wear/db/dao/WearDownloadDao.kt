@@ -2,9 +2,11 @@ package com.music.vivi.wear.db.dao
 
 import androidx.room.Dao
 import androidx.room.Delete
+import androidx.room.Embedded
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Relation
 import androidx.room.Transaction
 import com.music.vivi.wear.db.entities.WearDownloadEntity
 import com.music.vivi.wear.db.entities.WearSongEntity
@@ -12,6 +14,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface WearDownloadDao {
+    @Query("SELECT * FROM wear_download")
+    suspend fun getAllDownloadsList(): List<WearDownloadEntity>
+
     @Query("SELECT * FROM wear_download")
     fun getAllDownloads(): Flow<List<WearDownloadEntity>>
 
@@ -29,10 +34,7 @@ interface WearDownloadDao {
     suspend fun deleteDownload(download: WearDownloadEntity)
 
     @Query("DELETE FROM wear_download WHERE songId = :songId")
-    suspend fun deleteDownloadBySongId(songId: String)
-
-    @Query("DELETE FROM wear_download WHERE songId = :songId")
-    suspend fun deleteDownload(songId: String)
+    suspend fun deleteDownloadById(songId: String)
 
     @Query("SELECT * FROM wear_download ORDER BY downloadedAt ASC")
     suspend fun getAllDownloadsSortedByDate(): List<WearDownloadEntity>
@@ -41,7 +43,7 @@ interface WearDownloadDao {
     suspend fun deleteAllDownloads()
 
     @Query("SELECT SUM(sizeBytes) FROM wear_download")
-    suspend fun getTotalDownloadSize(): Long
+    suspend fun getTotalDownloadSize(): Long?
 
     @Query("SELECT COUNT(*) FROM wear_download")
     suspend fun getDownloadCount(): Int
@@ -51,6 +53,10 @@ interface WearDownloadDao {
 }
 
 data class DownloadWithSong(
-    val download: WearDownloadEntity,
+    @Embedded val download: WearDownloadEntity,
+    @Relation(
+        parentColumn = "songId",
+        entityColumn = "id"
+    )
     val song: WearSongEntity
 )

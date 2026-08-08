@@ -1,11 +1,14 @@
 package com.music.vivi.wear.download
 
-import android.content.Intent
+import android.app.Notification
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.download.DownloadService
-import androidx.media3.download.DownloadManager
-import androidx.media3.download.NotificationManager
+import androidx.media3.exoplayer.offline.Download
+import androidx.media3.exoplayer.offline.DownloadManager
+import androidx.media3.exoplayer.offline.DownloadService
+import androidx.media3.exoplayer.scheduler.Scheduler
+import com.music.vivi.wear.R
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 /**
  * Foreground service that handles music downloads for Wear OS.
@@ -14,27 +17,33 @@ import dagger.hilt.android.AndroidEntryPoint
 @UnstableApi
 @AndroidEntryPoint
 class WearDownloadService : DownloadService(
+    DOWNLOAD_NOTIFICATION_ID,
+    1000L,
     DOWNLOAD_NOTIFICATION_CHANNEL_ID,
-    0x1,
-    DOWNLOAD_NOTIFICATION_CHANNEL_ID,
-    R.drawable.exo_icon_play
+    R.string.app_name,
+    R.string.app_name
 ) {
 
+    @Inject
+    lateinit var wearDownloadManager: WearDownloadManager
+
     companion object {
+        private const val DOWNLOAD_NOTIFICATION_ID = 1
         private const val DOWNLOAD_NOTIFICATION_CHANNEL_ID = "wear_download_channel"
     }
 
     override fun getDownloadManager(): DownloadManager {
-        // Return the download manager instance
-        // This should be injected or accessed via a singleton
-        return WearDownloadManagerProvider.getInstance(this).downloadManager
+        return wearDownloadManager.downloadManager
+    }
+
+    override fun getScheduler(): Scheduler? {
+        return null
     }
 
     override fun getForegroundNotification(
-        downloads: MutableMap<String, Download>,
+        downloads: MutableList<Download>,
         notMetRequirements: Int
-    ): NotificationManager.Presenter {
-        // Create notification presenter for download progress
-        return WearDownloadNotificationPresenter(this, downloads)
+    ): Notification {
+        return WearDownloadNotificationPresenter(this, downloads).getNotification()
     }
 }

@@ -8,18 +8,21 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import androidx.media3.download.Download
-import androidx.media3.download.NotificationManager.Presenter
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.offline.Download
+import com.music.vivi.wear.MainActivity
+import com.music.vivi.wear.R
 
 /**
  * Notification presenter for download progress on Wear OS.
  */
+@UnstableApi
 class WearDownloadNotificationPresenter(
     private val context: Context,
-    private val downloads: MutableMap<String, Download>
-) : Presenter {
+    private val downloads: List<Download>
+) {
 
-    override fun getNotification(): Notification {
+    fun getNotification(): Notification {
         // Create a simple notification showing download progress
         val channelId = "wear_download_channel"
         createNotificationChannel(channelId)
@@ -31,7 +34,7 @@ class WearDownloadNotificationPresenter(
         )
 
         val totalDownloads = downloads.size
-        val completedDownloads = downloads.values.count { it.state == Download.STATE_COMPLETED }
+        val completedDownloads = downloads.count { it.state == Download.STATE_COMPLETED }
         val progress = if (totalDownloads > 0) {
             (completedDownloads * 100) / totalDownloads
         } else {
@@ -59,7 +62,7 @@ class WearDownloadNotificationPresenter(
             }
 
             val notificationManager = context.getSystemService(NotificationManager::class.java)
-            notificationManager.createNotificationChannel(channel)
+            notificationManager?.createNotificationChannel(channel)
         }
     }
 }

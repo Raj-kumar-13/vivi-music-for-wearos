@@ -36,30 +36,31 @@ class LibraryViewModel @Inject constructor(
     private fun loadLibraryData() {
         viewModelScope.launch {
             // Load recent songs from playback history
-            playbackHistoryDao.getRecentHistory(limit = 10)
-                .collect { historyEntities ->
-                    _recentSongs.value = historyEntities.map { entity ->
+            playbackHistoryDao.getRecentHistoryWithSongs(limit = 10)
+                .collect { historyWithSongs ->
+                    _recentSongs.value = historyWithSongs.map { item ->
+                        val song = item.song
                         WearSong(
-                            id = entity.songId,
-                            title = entity.title ?: "Unknown",
-                            artist = entity.artist,
-                            album = entity.album,
-                            thumbnailUrl = entity.thumbnailUrl,
-                            duration = entity.duration
+                            id = song.id,
+                            title = song.title,
+                            artist = song.artist,
+                            album = song.album,
+                            thumbnailUrl = song.thumbnailUrl,
+                            duration = song.duration
                         )
                     }
                 }
         }
 
         viewModelScope.launch {
-            // Load playlists
-            playlistDao.getAllPlaylists()
-                .collect { playlistEntities ->
-                    _playlists.value = playlistEntities.map { entity ->
+            // Load playlists with song count
+            playlistDao.getAllPlaylistsWithCount()
+                .collect { playlistWithCounts ->
+                    _playlists.value = playlistWithCounts.map { item ->
                         PlaylistInfo(
-                            id = entity.id.toString(),
-                            name = entity.name,
-                            songCount = entity.songCount ?: 0
+                            id = item.playlist.id,
+                            name = item.playlist.name,
+                            songCount = item.songCount
                         )
                     }
                 }
@@ -67,16 +68,17 @@ class LibraryViewModel @Inject constructor(
 
         viewModelScope.launch {
             // Load downloaded songs
-            downloadDao.getAllDownloads()
-                .collect { downloadEntities ->
-                    _downloadedSongs.value = downloadEntities.map { entity ->
+            downloadDao.getDownloadsWithSongs()
+                .collect { downloadWithSongs ->
+                    _downloadedSongs.value = downloadWithSongs.map { item ->
+                        val song = item.song
                         WearSong(
-                            id = entity.songId,
-                            title = entity.title ?: "Unknown",
-                            artist = entity.artist,
-                            album = entity.album,
-                            thumbnailUrl = entity.thumbnailUrl,
-                            duration = entity.duration
+                            id = song.id,
+                            title = song.title,
+                            artist = song.artist,
+                            album = song.album,
+                            thumbnailUrl = song.thumbnailUrl,
+                            duration = song.duration
                         )
                     }
                 }

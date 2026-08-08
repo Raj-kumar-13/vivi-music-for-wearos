@@ -4,8 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
@@ -47,7 +45,7 @@ fun ViviWearApp() {
 
     SwipeDismissableNavHost(
         navController = navController,
-        startDestination = "now_playing"
+        startDestination = "now_playing",
     ) {
         composable("now_playing") {
             NowPlayingScreen(

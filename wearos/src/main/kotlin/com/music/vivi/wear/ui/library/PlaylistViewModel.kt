@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.music.vivi.wear.data.models.WearSong
 import com.music.vivi.wear.db.dao.WearPlaylistDao
-import com.music.vivi.wear.db.dao.WearSongDao
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,8 +14,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class PlaylistViewModel @Inject constructor(
-    private val playlistDao: WearPlaylistDao,
-    private val songDao: WearSongDao
+    private val playlistDao: WearPlaylistDao
 ) : ViewModel() {
 
     private val _playlistInfo = MutableStateFlow<PlaylistInfo?>(null)
@@ -39,21 +37,19 @@ class PlaylistViewModel @Inject constructor(
             try {
                 Timber.d("Loading playlist: $playlistId")
                 
-                // Load playlist info
-                val playlistEntity = playlistDao.getPlaylistById(playlistId.toLong())
-                if (playlistEntity != null) {
+                // Load playlist with songs
+                val playlistWithSongs = playlistDao.getPlaylistWithSongs(playlistId)
+                if (playlistWithSongs != null) {
                     _playlistInfo.value = PlaylistInfo(
-                        id = playlistEntity.id.toString(),
-                        name = playlistEntity.name,
-                        songCount = playlistEntity.songCount ?: 0
+                        id = playlistWithSongs.playlist.id,
+                        name = playlistWithSongs.playlist.name,
+                        songCount = playlistWithSongs.songs.size
                     )
 
-                    // Load playlist songs
-                    val playlistSongs = playlistDao.getPlaylistSongs(playlistId.toLong())
-                    _playlistSongs.value = playlistSongs.map { songEntity ->
+                    _playlistSongs.value = playlistWithSongs.songs.map { songEntity ->
                         WearSong(
                             id = songEntity.id,
-                            title = songEntity.title ?: "Unknown",
+                            title = songEntity.title,
                             artist = songEntity.artist,
                             album = songEntity.album,
                             thumbnailUrl = songEntity.thumbnailUrl,
@@ -76,9 +72,3 @@ class PlaylistViewModel @Inject constructor(
         _error.value = null
     }
 }
-
-data class PlaylistInfo(
-    val id: String,
-    val name: String,
-    val songCount: Int
-)

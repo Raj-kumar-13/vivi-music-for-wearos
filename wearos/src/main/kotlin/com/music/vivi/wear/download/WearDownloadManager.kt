@@ -4,23 +4,24 @@ import android.content.Context
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.cache.Cache
-import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.datasource.okhttp.OkHttpDataSource
-import androidx.media3.download.Download
-import androidx.media3.download.DownloadManager
-import androidx.media3.download.DownloadNotificationHelper
-import androidx.media3.download.DownloadService
-import com.google.android.horologist.annotations.ExperimentalHorologistApi
+import androidx.media3.exoplayer.offline.Download
+import androidx.media3.exoplayer.offline.DownloadManager
+import androidx.media3.exoplayer.offline.DownloadNotificationHelper
+import androidx.media3.exoplayer.offline.DownloadRequest
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import okhttp3.OkHttpClient
 import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
+import java.util.concurrent.Executors
 
 /**
  * Manages music downloads for Wear OS using Media3 DownloadManager.
@@ -40,7 +41,7 @@ class WearDownloadManager @Inject constructor(
         private const val MAX_PARALLEL_DOWNLOADS = 1 // Conservative for battery
     }
 
-    private val streamCache: Cache by lazy {
+    private val _streamCache: Cache by lazy {
         val streamCacheDir = File(context.cacheDir, STREAM_CACHE_NAME)
         SimpleCache(
             streamCacheDir,
@@ -49,21 +50,47 @@ class WearDownloadManager @Inject constructor(
         )
     }
 
-    private lateinit var downloadManager: DownloadManager
+    lateinit var downloadManager: DownloadManager
+        private set
     private lateinit var downloadNotificationHelper: DownloadNotificationHelper
 
-    fun initialize() {
+    private val _downloads = MutableStateFlow<Map<String, Download>>(emptyMap())
+    val downloads = _downloads.asStateFlow()
+
+    init {
+        initialize()
+    }
+
+    private fun initialize() {
         if (!::downloadManager.isInitialized) {
             val downloadDirectory = File(context.getExternalFilesDir(null), DOWNLOAD_CACHE_NAME)
             downloadDirectory.mkdirs()
 
-            downloadManager = DownloadManager.Builder(
-                context,
-                DownloadIndexImpl(StandaloneDatabaseProvider(context), DOWNLOAD_CACHE_NAME),
-                DownloadService::class.java
+            val databaseProvider = StandaloneDatabaseProvider(context)
+            val downloadCache = SimpleCache(
+                downloadDirectory,
+                LeastRecentlyUsedCacheEvictor(500 * 1024 * 1024),
+                databaseProvider
             )
-                .setMaxParallelDownloads(MAX_PARALLEL_DOWNLOADS) // Battery-optimized
-                .build()
+
+            downloadManager = DownloadManager(
+                context,
+                databaseProvider,
+                downloadCache,
+                OkHttpDataSource.Factory(OkHttpClient()),
+                Executors.newSingleThreadExecutor()
+            ).apply {
+                maxParallelDownloads = MAX_PARALLEL_DOWNLOADS
+                addListener(object : DownloadManager.Listener {
+                    override fun onDownloadChanged(downloadManager: DownloadManager, download: Download, finalException: Exception?) {
+                        updateDownloads()
+                    }
+                    override fun onDownloadRemoved(downloadManager: DownloadManager, download: Download) {
+                        updateDownloads()
+                    }
+                })
+            }
+            updateDownloads()
 
             downloadNotificationHelper = DownloadNotificationHelper(context, "Vivi Wear Downloads")
 
@@ -71,71 +98,65 @@ class WearDownloadManager @Inject constructor(
         }
     }
 
+    private fun updateDownloads() {
+        val cursor = downloadManager.downloadIndex.getDownloads()
+        val map = mutableMapOf<String, Download>()
+        while (cursor.moveToNext()) {
+            val download = cursor.download
+            map[download.request.id] = download
+        }
+        cursor.close()
+        _downloads.value = map
+    }
+
     /**
      * Download a song for offline playback.
-     * @param songId The YouTube video ID
-     * @param streamUrl The stream URL to download
-     * @param title Song title for notification
      */
     fun downloadSong(songId: String, streamUrl: String, title: String) {
         if (!::downloadManager.isInitialized) {
             initialize()
         }
 
-        val request = DownloadRequest.Builder(songId, streamUrl.toUri())
-            .setCustomKey("title", title)
+        val request = DownloadRequest.Builder(songId, android.net.Uri.parse(streamUrl))
+            .setData(title.toByteArray())
             .build()
 
-        downloadManager.send(request)
+        downloadManager.addDownload(request)
 
         Timber.d("Started download for song: $title")
     }
 
     /**
      * Remove a downloaded song.
-     * @param songId The YouTube video ID
      */
     fun removeDownload(songId: String) {
         if (!::downloadManager.isInitialized) {
             initialize()
         }
 
-        downloadManager.remove(songId)
+        downloadManager.removeDownload(songId)
         Timber.d("Removed download for song: $songId")
     }
 
     /**
      * Get the download state for a specific song.
-     * @param songId The YouTube video ID
-     * @return Flow of Download state or null if not downloaded
      */
     fun getDownloadState(songId: String): Flow<Download?> {
-        if (!::downloadManager.isInitialized) {
-            initialize()
-        }
-
-        return downloadManager.downloads.map { downloads ->
-            downloads[songId]
-        }
+        return _downloads.map { it[songId] }
     }
 
     /**
      * Get all current downloads.
-     * @return Flow of all downloads
      */
     fun getAllDownloads(): Flow<Map<String, Download>> {
-        if (!::downloadManager.isInitialized) {
-            initialize()
-        }
-
-        return downloadManager.downloads
+        return downloads
     }
 
     /**
      * Get the stream cache for streaming playback.
      */
     fun getStreamCache(): Cache {
-        return streamCache
+        return _streamCache
     }
 
     /**
@@ -147,8 +168,8 @@ class WearDownloadManager @Inject constructor(
         }
 
         var totalSize = 0L
-        downloadManager.downloads.value.values.forEach { download ->
-            totalSize += download.downloadedBytes
+        _downloads.value.values.forEach { download ->
+            totalSize += download.bytesDownloaded
         }
         return totalSize
     }
@@ -161,7 +182,7 @@ class WearDownloadManager @Inject constructor(
             initialize()
         }
 
-        return downloadManager.downloads.value.size
+        return _downloads.value.size
     }
 
     /**
@@ -171,8 +192,6 @@ class WearDownloadManager @Inject constructor(
         if (::downloadManager.isInitialized) {
             downloadManager.release()
         }
-        streamCache.release()
+        _streamCache.release()
     }
 }
-
-private fun String.toUri() = android.net.Uri.parse(this)

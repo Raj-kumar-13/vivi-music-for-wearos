@@ -2,6 +2,8 @@ package com.music.vivi.wear.network
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.android.horologist.annotations.ExperimentalHorologistApi
+import com.google.android.horologist.networks.data.Status
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,6 +16,7 @@ import javax.inject.Inject
  * ViewModel to observe and manage network state across the application.
  * Provides reactive state for UI components to adapt to connectivity changes.
  */
+@OptIn(ExperimentalHorologistApi::class)
 @HiltViewModel
 class NetworkStateObserver @Inject constructor(
     private val connectivityManager: ConnectivityManager
@@ -33,8 +36,8 @@ class NetworkStateObserver @Inject constructor(
 
     init {
         viewModelScope.launch {
-            connectivityManager.networkStatus.collect { status ->
-                updateNetworkState(status)
+            connectivityManager.networkStatus.collect { networks ->
+                updateNetworkState(networks.status)
             }
         }
 
@@ -48,13 +51,12 @@ class NetworkStateObserver @Inject constructor(
         }
     }
 
-    private fun updateNetworkState(status: com.google.android.horologist.networks.awareness.NetworkStatus) {
+    private fun updateNetworkState(status: Status) {
         val newState = when (status) {
-            is com.google.android.horologist.networks.awareness.NetworkStatus.Available -> NetworkState.Available
-            is com.google.android.horologist.networks.awareness.NetworkStatus.Lost -> NetworkState.Lost
-            is com.google.android.horologist.networks.awareness.NetworkStatus.Recovering -> NetworkState.Recovering
-            is com.google.android.horologist.networks.awareness.NetworkStatus.Transient -> NetworkState.Transient
-            is com.google.android.horologist.networks.awareness.NetworkStatus.Unavailable -> NetworkState.Unavailable
+            is Status.Available -> NetworkState.Available
+            is Status.Lost -> NetworkState.Lost
+            is Status.Unknown -> NetworkState.Unknown
+            else -> NetworkState.Unavailable
         }
         _networkState.value = newState
     }

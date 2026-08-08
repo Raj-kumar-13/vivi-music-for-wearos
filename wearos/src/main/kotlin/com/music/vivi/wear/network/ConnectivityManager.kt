@@ -1,123 +1,61 @@
 package com.music.vivi.wear.network
 
 import android.content.Context
-import com.google.android.horologist.networks.awareness.NetworkAwareness
-import com.google.android.horologist.networks.awareness.NetworkAwarenessObserver
-import com.google.android.horologist.networks.awareness.NetworkStatus
-import com.google.android.horologist.networks.awareness.NetworkStatus.Lost
-import com.google.android.horologist.networks.awareness.NetworkStatus.Recovering
-import com.google.android.horologist.networks.awareness.NetworkStatus.Transient
-import com.google.android.horologist.networks.awareness.NetworkStatus.Unavailable
-import com.google.android.horologist.networks.awareness.NetworkStatus.Available
+import com.google.android.horologist.annotations.ExperimentalHorologistApi
+import com.google.android.horologist.networks.data.Networks
+import com.google.android.horologist.networks.status.NetworkRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Manages network connectivity awareness for Wear OS.
- * Handles three connectivity modes: Bluetooth-relayed, standalone Wi-Fi, and offline.
- */
+@OptIn(ExperimentalHorologistApi::class)
 @Singleton
 class ConnectivityManager @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val networkRepository: NetworkRepository
 ) {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    
+    private val _networks = MutableStateFlow(Networks(null, emptyList()))
+    val networks: StateFlow<Networks> = _networks.asStateFlow()
 
-    private val _networkStatus = MutableStateFlow<NetworkStatus>(Available)
-    val networkStatus: StateFlow<NetworkStatus> = _networkStatus.asStateFlow()
-
-    private val _connectivityMode = MutableStateFlow<ConnectivityMode>(ConnectivityMode.UNKNOWN)
+    private val _connectivityMode = MutableStateFlow(ConnectivityMode.UNKNOWN)
     val connectivityMode: StateFlow<ConnectivityMode> = _connectivityMode.asStateFlow()
 
-    private val _isOnline = MutableStateFlow(true)
-    val isOnline: StateFlow<Boolean> = _isOnline.asStateFlow()
-
-    private val networkAwareness: NetworkAwareness by lazy {
-        NetworkAwareness.create(context)
-    }
-
-    private val networkObserver: NetworkAwarenessObserver by lazy {
-        networkAwareness.getNetworkStatusObserver()
-    }
+    // Backward compatibility flow
+    val networkStatus: StateFlow<Networks> = networks
 
     fun initialize() {
         Timber.d("Initializing ConnectivityManager")
-        networkObserver.startObserving()
-        networkObserver.networkStatus.observeForever { status ->
-            handleNetworkStatusChange(status)
-        }
-    }
-
-    private fun handleNetworkStatusChange(status: NetworkStatus) {
-        Timber.d("Network status changed: $status")
-        _networkStatus.value = status
-
-        when (status) {
-            is Available -> {
-                _isOnline.value = true
-                _connectivityMode.value = determineConnectivityMode()
-            }
-            is Lost -> {
-                _isOnline.value = false
-                _connectivityMode.value = ConnectivityMode.OFFLINE
-            }
-            is Recovering -> {
-                _isOnline.value = false
-                _connectivityMode.value = ConnectivityMode.RECOVERING
-            }
-            is Transient -> {
-                _isOnline.value = true
-                _connectivityMode.value = determineConnectivityMode()
-            }
-            is Unavailable -> {
-                _isOnline.value = false
-                _connectivityMode.value = ConnectivityMode.OFFLINE
+        scope.launch {
+            networkRepository.networkStatus.collect { status ->
+                _networks.value = status
+                updateConnectivityMode(status)
             }
         }
     }
 
-    private fun determineConnectivityMode(): ConnectivityMode {
-        // This is a simplified implementation
-        // In production, you'd use NetworkCapabilities to determine the exact type
-        return ConnectivityMode.WIFI // Default to Wi-Fi for simplicity
+    private fun updateConnectivityMode(status: Networks) {
+        _connectivityMode.value = if (status.networks.isNotEmpty()) {
+            ConnectivityMode.ONLINE
+        } else {
+            ConnectivityMode.OFFLINE
+        }
     }
 
     fun stopObserving() {
-        networkObserver.stopObserving()
+        Timber.d("Stopping ConnectivityManager observations")
     }
 
     fun release() {
-        stopObserving()
+        // Cleanup resources
     }
-}
-
-enum class ConnectivityMode {
-    BLUETOOTH_RELAYED,  // Phone nearby, using Bluetooth for internet
-    WIFI,               // Standalone Wi-Fi connection
-    OFFLINE,            // No connectivity
-    RECOVERING,         // Network is recovering
-    UNKNOWN             // Initial state
-}
-
-/**
- * Determine the appropriate streaming quality based on connectivity mode.
- */
-fun ConnectivityMode.getStreamingQuality(): StreamingQuality {
-    return when (this) {
-        ConnectivityMode.BLUETOOTH_RELAYED -> StreamingQuality.LOW
-        ConnectivityMode.WIFI -> StreamingQuality.HIGH
-        ConnectivityMode.OFFLINE -> StreamingQuality.OFFLINE
-        ConnectivityMode.RECOVERING -> StreamingQuality.LOW
-        ConnectivityMode.UNKNOWN -> StreamingQuality.MEDIUM
-    }
-}
-
-enum class StreamingQuality {
-    HIGH,    // High bitrate for Wi-Fi
-    MEDIUM,  // Medium bitrate
-    LOW,     // Low bitrate for Bluetooth-relayed
-    OFFLINE  // No streaming (offline only)
 }

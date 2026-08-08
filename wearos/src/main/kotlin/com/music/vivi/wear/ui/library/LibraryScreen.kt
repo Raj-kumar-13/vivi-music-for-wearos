@@ -1,6 +1,5 @@
 package com.music.vivi.wear.ui.library
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -8,18 +7,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material.Button
-import androidx.wear.compose.material.Card
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.android.horologist.compose.layout.ScalingLazyColumn
 import com.google.android.horologist.compose.layout.ScreenScaffold
+import com.google.android.horologist.compose.layout.rememberResponsiveColumnState
 import com.google.android.horologist.compose.layout.ScalingLazyColumnDefaults
 import com.music.vivi.wear.data.models.WearSong
+import com.music.vivi.wear.ui.components.SongCard
+import com.music.vivi.wear.ui.components.PlaylistCard
+import com.music.vivi.wear.ui.components.WearTimeText
 
 @Composable
 fun LibraryScreen(
@@ -29,74 +29,84 @@ fun LibraryScreen(
     onNavigateToNowPlaying: () -> Unit = {},
     onNavigateToDownloads: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
-    onSongClick: (WearSong) -> Unit = {}
+    onSongClick: (WearSong) -> Unit = {},
 ) {
     val recentSongs by viewModel.recentSongs.collectAsState()
     val playlists by viewModel.playlists.collectAsState()
     val downloadedSongs by viewModel.downloadedSongs.collectAsState()
 
+    val columnState = rememberResponsiveColumnState(
+        contentPadding = ScalingLazyColumnDefaults.padding(
+            first = ScalingLazyColumnDefaults.ItemType.Text,
+            last = ScalingLazyColumnDefaults.ItemType.SingleButton,
+        )
+    )
+
     ScreenScaffold(
-        scrollState = ScalingLazyColumnDefaults.scrollState(),
-        timeText = { TimeText() }
+        scrollState = columnState,
+        timeText = { WearTimeText() }
     ) {
-        item {
-            Text(
-                text = "Library",
-                style = MaterialTheme.typography.title3,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            )
-        }
-
-        // Voice Search Button
-        item {
-            Button(
-                onClick = onNavigateToSearch,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp)
-            ) {
-                Text("Search with Voice")
-            }
-        }
-
-        // Recent Plays Section
-        if (recentSongs.isNotEmpty()) {
+        ScalingLazyColumn(
+            columnState = columnState,
+            modifier = Modifier.fillMaxSize()
+        ) {
             item {
                 Text(
-                    text = "Recent",
-                    style = MaterialTheme.typography.caption2,
+                    text = "Library",
+                    style = MaterialTheme.typography.title3,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 )
             }
 
-            recentSongs.forEach { song ->
+            // Voice Search Button
+            item {
+                Button(
+                    onClick = onNavigateToSearch,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                ) {
+                    Text("Search with Voice")
+                }
+            }
+
+            // Recent Plays Section
+            if (recentSongs.isNotEmpty()) {
                 item {
+                    Text(
+                        text = "Recent",
+                        style = MaterialTheme.typography.caption2,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+                }
+
+                items(recentSongs.size) { index ->
+                    val song = recentSongs[index]
                     SongCard(
                         song = song,
                         onClick = { onSongClick(song) }
                     )
                 }
             }
-        }
 
-        // Playlists Section
-        if (playlists.isNotEmpty()) {
-            item {
-                Text(
-                    text = "Playlists",
-                    style = MaterialTheme.typography.caption2,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-            }
-
-            playlists.forEach { playlist ->
+            // Playlists Section
+            if (playlists.isNotEmpty()) {
                 item {
+                    Text(
+                        text = "Playlists",
+                        style = MaterialTheme.typography.caption2,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+                }
+
+                items(playlists.size) { index ->
+                    val playlist = playlists[index]
                     PlaylistCard(
                         playlistName = playlist.name,
                         songCount = playlist.songCount,
@@ -104,126 +114,61 @@ fun LibraryScreen(
                     )
                 }
             }
-        }
 
-        // Downloads Section
-        if (downloadedSongs.isNotEmpty()) {
-            item {
-                Text(
-                    text = "Downloads",
-                    style = MaterialTheme.typography.caption2,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-            }
-
-            downloadedSongs.forEach { song ->
+            // Downloads Section
+            if (downloadedSongs.isNotEmpty()) {
                 item {
+                    Text(
+                        text = "Downloads",
+                        style = MaterialTheme.typography.caption2,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+                }
+
+                items(downloadedSongs.size) { index ->
+                    val song = downloadedSongs[index]
                     SongCard(
                         song = song,
                         onClick = { onSongClick(song) }
                     )
                 }
             }
-        }
 
-        // Now Playing Button
-        item {
-            Button(
-                onClick = onNavigateToNowPlaying,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            ) {
-                Text("Now Playing")
+            // Navigation Buttons
+            item {
+                Button(
+                    onClick = onNavigateToNowPlaying,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                ) {
+                    Text("Now Playing")
+                }
             }
-        }
 
-        // Downloads Button
-        item {
-            Button(
-                onClick = onNavigateToDownloads,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            ) {
-                Text("Downloads")
+            item {
+                Button(
+                    onClick = onNavigateToDownloads,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                ) {
+                    Text("Downloads")
+                }
             }
-        }
 
-        // Settings Button
-        item {
-            Button(
-                onClick = onNavigateToSettings,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            ) {
-                Text("Settings")
+            item {
+                Button(
+                    onClick = onNavigateToSettings,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                ) {
+                    Text("Settings")
+                }
             }
         }
     }
-}
-
-@Composable
-fun SongCard(
-    song: WearSong,
-    onClick: () -> Unit
-) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
-    ) {
-        Text(
-            text = song.title,
-            style = MaterialTheme.typography.body2,
-            modifier = Modifier.padding(8.dp),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-        if (song.artist != null) {
-            Text(
-                text = song.artist,
-                style = MaterialTheme.typography.caption1,
-                modifier = Modifier.padding(horizontal = 8.dp, bottom = 8.dp),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-}
-
-@Composable
-fun PlaylistCard(
-    playlistName: String,
-    songCount: Int,
-    onClick: () -> Unit
-) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
-    ) {
-        Text(
-            text = playlistName,
-            style = MaterialTheme.typography.body2,
-            modifier = Modifier.padding(8.dp),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-        Text(
-            text = "$songCount songs",
-            style = MaterialTheme.typography.caption1,
-            modifier = Modifier.padding(horizontal = 8.dp, bottom = 8.dp)
-        )
-    }
-}
-
-@Composable
-fun TimeText() {
-    androidx.wear.compose.material.TimeText()
 }

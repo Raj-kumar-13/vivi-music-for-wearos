@@ -7,12 +7,12 @@ plugins {
 
 android {
     namespace = "com.music.vivi.wear"
-    compileSdk = 34
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.vivi.vivimusic.wear"
         minSdk = 30
-        targetSdk = 34
+        targetSdk = 37
         versionCode = 1
         versionName = "0.1.0"
     }
@@ -37,7 +37,10 @@ android {
     kotlin {
         jvmToolchain(21)
         compilerOptions {
-            freeCompilerArgs.add("-opt-in=kotlin.RequiresOptIn")
+            freeCompilerArgs.addAll(
+                "-opt-in=kotlin.RequiresOptIn",
+                "-opt-in=com.google.android.horologist.annotations.ExperimentalHorologistApi"
+            )
         }
     }
 
@@ -80,6 +83,11 @@ dependencies {
     implementation(libs.horologist.tiles)
     implementation(libs.horologist.networks.ui)
 
+    // Wear OS Tiles & ProtoLayout
+    implementation(libs.androidx.wear.tiles)
+    implementation(libs.androidx.protolayout.expression)
+    implementation(libs.androidx.protolayout.material)
+
     // Phone↔watch sync
     implementation(libs.play.services.wearable)
 
@@ -108,6 +116,9 @@ dependencies {
     // Hilt
     implementation(libs.hilt)
     ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.common.compiler)
 
     // Core library desugaring
     coreLibraryDesugaring(libs.desugaring)
