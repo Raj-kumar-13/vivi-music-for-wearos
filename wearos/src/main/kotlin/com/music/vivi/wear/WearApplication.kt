@@ -2,6 +2,8 @@ package com.music.vivi.wear
 
 import android.app.Application
 import android.os.PowerManager
+import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
 import com.music.vivi.wear.worker.CleanupScheduler
 import com.music.vivi.wear.network.ConnectivityManager
@@ -13,12 +15,21 @@ import timber.log.Timber
 import javax.inject.Inject
 
 @HiltAndroidApp
-class WearApplication : Application() {
+class WearApplication : Application(), Configuration.Provider {
 
     @Inject
     lateinit var connectivityManager: ConnectivityManager
 
+    @Inject
+    lateinit var workerFactory: HiltWorkerFactory
+
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+            .setWorkerFactory(workerFactory)
+            .setMinimumLoggingLevel(android.util.Log.INFO)
+            .build()
 
     override fun onCreate() {
         super.onCreate()

@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -24,10 +24,10 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {}
 ) {
-    val audioQuality by viewModel.audioQuality.collectAsState()
-    val downloadSizeCap by viewModel.downloadSizeCap.collectAsState()
-    val authStatus by viewModel.authStatus.collectAsState()
-    val versionInfo by viewModel.versionInfo.collectAsState()
+    val audioQuality by viewModel.audioQuality.collectAsStateWithLifecycle()
+    val downloadSizeCap by viewModel.downloadSizeCap.collectAsStateWithLifecycle()
+    val authStatus by viewModel.authStatus.collectAsStateWithLifecycle()
+    val versionInfo by viewModel.versionInfo.collectAsStateWithLifecycle()
 
     val columnState = rememberResponsiveColumnState(
         contentPadding = ScalingLazyColumnDefaults.padding(

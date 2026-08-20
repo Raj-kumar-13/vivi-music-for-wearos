@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -31,9 +31,9 @@ fun LibraryScreen(
     onNavigateToSettings: () -> Unit = {},
     onSongClick: (WearSong) -> Unit = {},
 ) {
-    val recentSongs by viewModel.recentSongs.collectAsState()
-    val playlists by viewModel.playlists.collectAsState()
-    val downloadedSongs by viewModel.downloadedSongs.collectAsState()
+    val recentSongs by viewModel.recentSongs.collectAsStateWithLifecycle()
+    val playlists by viewModel.playlists.collectAsStateWithLifecycle()
+    val downloadedSongs by viewModel.downloadedSongs.collectAsStateWithLifecycle()
 
     val columnState = rememberResponsiveColumnState(
         contentPadding = ScalingLazyColumnDefaults.padding(
@@ -50,7 +50,7 @@ fun LibraryScreen(
             columnState = columnState,
             modifier = Modifier.fillMaxSize()
         ) {
-            item {
+            item(contentType = "header") {
                 Text(
                     text = "Library",
                     style = MaterialTheme.typography.title3,
@@ -61,7 +61,7 @@ fun LibraryScreen(
             }
 
             // Voice Search Button
-            item {
+            item(contentType = "button") {
                 Button(
                     onClick = onNavigateToSearch,
                     modifier = Modifier
@@ -74,7 +74,7 @@ fun LibraryScreen(
 
             // Recent Plays Section
             if (recentSongs.isNotEmpty()) {
-                item {
+                item(contentType = "section_header") {
                     Text(
                         text = "Recent",
                         style = MaterialTheme.typography.caption2,
@@ -84,7 +84,7 @@ fun LibraryScreen(
                     )
                 }
 
-                items(recentSongs.size, key = { recentSongs[it].id }) { index ->
+                items(recentSongs.size, key = { recentSongs[it].id }, contentType = { "song_card" }) { index ->
                     val song = recentSongs[index]
                     SongCard(
                         song = song,
@@ -95,7 +95,7 @@ fun LibraryScreen(
 
             // Playlists Section
             if (playlists.isNotEmpty()) {
-                item {
+                item(contentType = "section_header") {
                     Text(
                         text = "Playlists",
                         style = MaterialTheme.typography.caption2,
@@ -105,7 +105,7 @@ fun LibraryScreen(
                     )
                 }
 
-                items(playlists.size, key = { playlists[it].id }) { index ->
+                items(playlists.size, key = { playlists[it].id }, contentType = { "playlist_card" }) { index ->
                     val playlist = playlists[index]
                     PlaylistCard(
                         playlistName = playlist.name,
@@ -117,7 +117,7 @@ fun LibraryScreen(
 
             // Downloads Section
             if (downloadedSongs.isNotEmpty()) {
-                item {
+                item(contentType = "section_header") {
                     Text(
                         text = "Downloads",
                         style = MaterialTheme.typography.caption2,
@@ -127,7 +127,7 @@ fun LibraryScreen(
                     )
                 }
 
-                items(downloadedSongs.size, key = { downloadedSongs[it].id }) { index ->
+                items(downloadedSongs.size, key = { downloadedSongs[it].id }, contentType = { "song_card" }) { index ->
                     val song = downloadedSongs[index]
                     SongCard(
                         song = song,
@@ -137,7 +137,7 @@ fun LibraryScreen(
             }
 
             // Navigation Buttons
-            item {
+            item(contentType = "button") {
                 Button(
                     onClick = onNavigateToNowPlaying,
                     modifier = Modifier
@@ -148,7 +148,7 @@ fun LibraryScreen(
                 }
             }
 
-            item {
+            item(contentType = "button") {
                 Button(
                     onClick = onNavigateToDownloads,
                     modifier = Modifier
@@ -159,7 +159,7 @@ fun LibraryScreen(
                 }
             }
 
-            item {
+            item(contentType = "button") {
                 Button(
                     onClick = onNavigateToSettings,
                     modifier = Modifier

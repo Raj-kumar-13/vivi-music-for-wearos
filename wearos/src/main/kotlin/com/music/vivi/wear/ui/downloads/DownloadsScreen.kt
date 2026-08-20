@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -28,9 +28,9 @@ fun DownloadsScreen(
     viewModel: DownloadsViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {}
 ) {
-    val downloads by viewModel.downloads.collectAsState()
-    val storageUsage by viewModel.storageUsage.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
+    val downloads by viewModel.downloads.collectAsStateWithLifecycle()
+    val storageUsage by viewModel.storageUsage.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
     val columnState = rememberResponsiveColumnState(
         contentPadding = ScalingLazyColumnDefaults.padding(

@@ -25,5 +25,10 @@
     public static *** i(...);
 }
 
+# Keep services referenced by name in AndroidManifest.xml
+-keep class com.music.vivi.wear.auth.AuthSyncListenerService { *; }
+-keep class com.music.vivi.wear.tile.WearMusicTileService { *; }
+-keep class com.music.vivi.wear.download.WearDownloadService { *; }
+
 # Compose keeps are handled by the Compose compiler plugin — no blanket keeps needed
 -dontwarn androidx.compose.**

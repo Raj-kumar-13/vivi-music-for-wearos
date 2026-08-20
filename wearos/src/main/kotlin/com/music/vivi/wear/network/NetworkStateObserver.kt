@@ -54,6 +54,7 @@ class NetworkStateObserver @Inject constructor(
     private fun updateNetworkState(status: Status) {
         val newState = when (status) {
             is Status.Available -> NetworkState.Available
+            is Status.Losing -> NetworkState.Transient
             is Status.Lost -> NetworkState.Lost
             is Status.Unknown -> NetworkState.Unknown
             else -> NetworkState.Unavailable
@@ -68,7 +69,8 @@ class NetworkStateObserver @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        connectivityManager.stopObserving()
+        // viewModelScope cancellation automatically stops our flow collections
+        // Do NOT call connectivityManager.stopObserving() — it's a singleton shared by other components
     }
 }
 

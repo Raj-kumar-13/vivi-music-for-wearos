@@ -130,17 +130,10 @@ class LibraryCleanupWorker @AssistedInject constructor(
 
     private suspend fun cleanupOldPlaybackHistory() {
         try {
-            // Keep only the last 100 playback history entries
             val count = playbackHistoryDao.getHistoryCount()
             if (count > 100) {
-                // getAllHistory() returns ordered by playedAt DESC (newest first)
-                // drop(100) skips the 100 newest, giving us the old entries to delete
-                val allHistory = playbackHistoryDao.getAllHistory()
-                val toRemove = allHistory.drop(100)
-                toRemove.forEach { history ->
-                    playbackHistoryDao.deleteHistoryById(history.id)
-                }
-                Timber.d("Cleaned up ${toRemove.size} old playback history entries")
+                playbackHistoryDao.deleteOldHistory(keepCount = 100)
+                Timber.d("Cleaned up ${count - 100} old playback history entries")
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to cleanup old playback history")

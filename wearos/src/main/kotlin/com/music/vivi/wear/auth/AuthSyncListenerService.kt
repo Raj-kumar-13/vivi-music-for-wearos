@@ -25,17 +25,14 @@ class AuthSyncListenerService : WearableListenerService() {
     }
 
     override fun onDataChanged(dataEvents: DataEventBuffer) {
-        try {
-            for (event in dataEvents) {
-                if (event.type == DataEvent.TYPE_CHANGED) {
-                    val path = event.dataItem.uri.path
-                    if (path == AUTH_DATA_PATH) {
-                        handleAuthData(event.dataItem)
-                    }
+        // DataEventBuffer is auto-released by WearableListenerService after callback returns
+        for (event in dataEvents) {
+            if (event.type == DataEvent.TYPE_CHANGED) {
+                val path = event.dataItem.uri.path
+                if (path == AUTH_DATA_PATH) {
+                    handleAuthData(event.dataItem)
                 }
             }
-        } finally {
-            dataEvents.release()
         }
     }
 

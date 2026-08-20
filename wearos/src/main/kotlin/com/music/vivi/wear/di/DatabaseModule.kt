@@ -28,7 +28,7 @@ object DatabaseModule {
             WearMusicDatabase::class.java,
             "wear_music.db"
         )
-            .fallbackToDestructiveMigration()
+            .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
     }
 

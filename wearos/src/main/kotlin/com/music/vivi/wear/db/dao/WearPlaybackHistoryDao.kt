@@ -44,6 +44,9 @@ interface WearPlaybackHistoryDao {
 
     @Query("SELECT COUNT(*) FROM wear_playback_history")
     suspend fun getHistoryCount(): Int
+
+    @Query("DELETE FROM wear_playback_history WHERE id NOT IN (SELECT id FROM wear_playback_history ORDER BY playedAt DESC LIMIT :keepCount)")
+    suspend fun deleteOldHistory(keepCount: Int)
 }
 
 data class HistoryWithSong(

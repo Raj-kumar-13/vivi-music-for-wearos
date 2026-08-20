@@ -21,10 +21,17 @@ class WearDownloadNotificationPresenter(
     private val downloads: List<Download>
 ) {
 
+    companion object {
+        @Volatile
+        private var channelCreated = false
+    }
+
     fun getNotification(): Notification {
-        // Create a simple notification showing download progress
         val channelId = "wear_download_channel"
-        createNotificationChannel(channelId)
+        if (!channelCreated) {
+            createNotificationChannel(channelId)
+            channelCreated = true
+        }
 
         val intent = Intent(context, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(

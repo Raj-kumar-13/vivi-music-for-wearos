@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -29,10 +29,10 @@ fun PlaylistScreen(
     onSongClick: (WearSong) -> Unit = {},
     onNavigateBack: () -> Unit = {},
 ) {
-    val playlistInfo by viewModel.playlistInfo.collectAsState()
-    val playlistSongs by viewModel.playlistSongs.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val error by viewModel.error.collectAsState()
+    val playlistInfo by viewModel.playlistInfo.collectAsStateWithLifecycle()
+    val playlistSongs by viewModel.playlistSongs.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
 
     LaunchedEffect(playlistId) {
         viewModel.loadPlaylist(playlistId)

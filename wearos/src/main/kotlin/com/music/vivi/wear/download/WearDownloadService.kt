@@ -33,6 +33,7 @@ class WearDownloadService : DownloadService(
     }
 
     override fun getDownloadManager(): DownloadManager {
+        wearDownloadManager.ensureInitialized()
         return wearDownloadManager.downloadManager
     }
 

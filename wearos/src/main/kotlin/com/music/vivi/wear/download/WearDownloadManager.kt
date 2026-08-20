@@ -43,14 +43,16 @@ class WearDownloadManager @Inject constructor(
         private const val MAX_PARALLEL_DOWNLOADS = 1 // Conservative for battery
     }
 
-    private val databaseProvider = StandaloneDatabaseProvider(context)
+    private val databaseProvider by lazy { StandaloneDatabaseProvider(context) }
 
-    private val okHttpClient = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
-        .callTimeout(5, TimeUnit.MINUTES)
-        .build()
+    private val okHttpClient by lazy {
+        OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .callTimeout(5, TimeUnit.MINUTES)
+            .build()
+    }
 
     @Volatile
     private var _streamCache: Cache? = null
@@ -59,60 +61,67 @@ class WearDownloadManager @Inject constructor(
     lateinit var downloadManager: DownloadManager
         private set
     private lateinit var downloadNotificationHelper: DownloadNotificationHelper
+    private var downloadExecutor: java.util.concurrent.ExecutorService? = null
 
     private val _downloads = MutableStateFlow<Map<String, Download>>(emptyMap())
     val downloads = _downloads.asStateFlow()
 
-    private fun ensureInitialized() {
+    internal fun ensureInitialized() {
         if (!::downloadManager.isInitialized) {
-            initialize()
+            synchronized(this) {
+                if (!::downloadManager.isInitialized) {
+                    initialize()
+                }
+            }
         }
     }
 
     private fun initialize() {
-        if (!::downloadManager.isInitialized) {
-            val downloadDirectory = File(context.getExternalFilesDir(null), DOWNLOAD_CACHE_NAME)
-            downloadDirectory.mkdirs()
+        val baseDir = context.getExternalFilesDir(null) ?: context.filesDir
+        val downloadDirectory = File(baseDir, DOWNLOAD_CACHE_NAME)
+        downloadDirectory.mkdirs()
 
-            val downloadCache = SimpleCache(
-                downloadDirectory,
-                LeastRecentlyUsedCacheEvictor(DOWNLOAD_CACHE_SIZE),
-                databaseProvider
-            )
+        val downloadCache = SimpleCache(
+            downloadDirectory,
+            LeastRecentlyUsedCacheEvictor(DOWNLOAD_CACHE_SIZE),
+            databaseProvider
+        )
 
-            downloadManager = DownloadManager(
-                context,
-                databaseProvider,
-                downloadCache,
-                OkHttpDataSource.Factory(okHttpClient),
-                Executors.newSingleThreadExecutor()
-            ).apply {
-                maxParallelDownloads = MAX_PARALLEL_DOWNLOADS
-                addListener(object : DownloadManager.Listener {
-                    override fun onDownloadChanged(downloadManager: DownloadManager, download: Download, finalException: Exception?) {
-                        updateDownloads()
-                    }
-                    override fun onDownloadRemoved(downloadManager: DownloadManager, download: Download) {
-                        updateDownloads()
-                    }
-                })
-            }
-            updateDownloads()
+        downloadExecutor = Executors.newSingleThreadExecutor()
 
-            downloadNotificationHelper = DownloadNotificationHelper(context, "Vivi Wear Downloads")
-
-            Timber.d("WearDownloadManager initialized")
+        downloadManager = DownloadManager(
+            context,
+            databaseProvider,
+            downloadCache,
+            OkHttpDataSource.Factory(okHttpClient),
+            downloadExecutor!!
+        ).apply {
+            maxParallelDownloads = MAX_PARALLEL_DOWNLOADS
+            addListener(object : DownloadManager.Listener {
+                override fun onDownloadChanged(downloadManager: DownloadManager, download: Download, finalException: Exception?) {
+                    updateDownloads()
+                }
+                override fun onDownloadRemoved(downloadManager: DownloadManager, download: Download) {
+                    updateDownloads()
+                }
+            })
         }
+        updateDownloads()
+
+        downloadNotificationHelper = DownloadNotificationHelper(context, "Vivi Wear Downloads")
+
+        Timber.d("WearDownloadManager initialized")
     }
 
     private fun updateDownloads() {
         val cursor = downloadManager.downloadIndex.getDownloads()
         val map = mutableMapOf<String, Download>()
-        while (cursor.moveToNext()) {
-            val download = cursor.download
-            map[download.request.id] = download
+        cursor.use {
+            while (it.moveToNext()) {
+                val download = it.download
+                map[download.request.id] = download
+            }
         }
-        cursor.close()
         _downloads.value = map
     }
 
@@ -201,5 +210,7 @@ class WearDownloadManager @Inject constructor(
             _streamCache?.release()
             _streamCache = null
         }
+        downloadExecutor?.shutdown()
+        downloadExecutor = null
     }
 }

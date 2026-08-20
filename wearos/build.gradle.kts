@@ -49,12 +49,6 @@ android {
         buildConfig = true
     }
 
-    composeCompiler {
-        // Enable strong skipping: skips recomposition of composables with unchanged params
-        // even if params are not formally "stable"
-        enableStrongSkippingMode = true
-    }
-
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
@@ -72,6 +66,7 @@ dependencies {
     implementation(libs.wear.compose.foundation)
     implementation(libs.wear.compose.navigation)
     implementation(libs.activity)
+    implementation(libs.lifecycle.runtime.compose)
 
     // Playback
     implementation(libs.media3)

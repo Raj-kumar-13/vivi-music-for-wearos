@@ -63,7 +63,10 @@ class WearYouTubeRepository @Inject constructor(
 
             if (result.isSuccess) {
                 val response = result.getOrNull()
-                val streamUrl = response?.streamingData?.adaptiveFormats?.firstOrNull { it.isAudio }?.url
+                val streamUrl = response?.streamingData?.adaptiveFormats
+                    ?.filter { it.isAudio }
+                    ?.sortedBy { it.bitrate ?: Int.MAX_VALUE }
+                    ?.firstOrNull()?.url
                     ?: response?.streamingData?.formats?.firstOrNull { it.url != null }?.url
 
                 if (streamUrl != null) {

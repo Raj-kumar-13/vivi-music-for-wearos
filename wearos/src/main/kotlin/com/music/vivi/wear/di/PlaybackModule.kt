@@ -1,36 +1,17 @@
 package com.music.vivi.wear.di
 
-import android.content.Context
 import com.google.android.horologist.audio.AudioOutput
-import com.google.android.horologist.audio.SystemAudioRepository
 import com.google.android.horologist.media3.audio.AudioOutputSelector
 import com.google.android.horologist.media3.logging.ErrorReporter
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object PlaybackModule {
-
-    @Provides
-    @Singleton
-    fun provideSystemAudioRepository(
-        @ApplicationContext context: Context
-    ): SystemAudioRepository {
-        return SystemAudioRepository.fromContext(context)
-    }
-
-    @Provides
-    @Singleton
-    fun provideAudioOutput(
-        systemAudioRepository: SystemAudioRepository
-    ): AudioOutput {
-        return systemAudioRepository.audioOutput.value
-    }
 
     /**
      * Provides a default AudioOutputSelector.

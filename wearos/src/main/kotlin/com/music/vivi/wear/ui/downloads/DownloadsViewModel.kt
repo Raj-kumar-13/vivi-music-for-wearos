@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -121,14 +122,11 @@ class DownloadsViewModel @Inject constructor(
                 val workManager = androidx.work.WorkManager.getInstance(context)
                 workManager.enqueue(workRequest)
                 Timber.d("Manual cleanup triggered")
-                // Observe work completion instead of arbitrary delay
-                workManager.getWorkInfoByIdFlow(workRequest.id).collect { workInfo ->
-                    if (workInfo != null && workInfo.state.isFinished) {
-                        refreshDownloads()
-                        _isLoading.value = false
-                        return@collect
-                    }
-                }
+                // Wait for work completion
+                workManager.getWorkInfoByIdFlow(workRequest.id)
+                    .first { it != null && it.state.isFinished }
+                refreshDownloads()
+                _isLoading.value = false
             } catch (e: Exception) {
                 Timber.e(e, "Manual cleanup failed")
                 _isLoading.value = false
