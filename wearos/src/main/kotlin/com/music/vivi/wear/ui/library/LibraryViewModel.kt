@@ -7,6 +7,7 @@ import com.music.vivi.wear.db.dao.WearPlaybackHistoryDao
 import com.music.vivi.wear.db.dao.WearPlaylistDao
 import com.music.vivi.wear.db.dao.WearDownloadDao
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,12 +30,20 @@ class LibraryViewModel @Inject constructor(
     private val _downloadedSongs = MutableStateFlow<List<WearSong>>(emptyList())
     val downloadedSongs: StateFlow<List<WearSong>> = _downloadedSongs.asStateFlow()
 
+    private var recentSongsJob: Job? = null
+    private var playlistsJob: Job? = null
+    private var downloadedSongsJob: Job? = null
+
     init {
         loadLibraryData()
     }
 
     private fun loadLibraryData() {
-        viewModelScope.launch {
+        recentSongsJob?.cancel()
+        playlistsJob?.cancel()
+        downloadedSongsJob?.cancel()
+
+        recentSongsJob = viewModelScope.launch {
             // Load recent songs from playback history
             playbackHistoryDao.getRecentHistoryWithSongs(limit = 10)
                 .collect { historyWithSongs ->
@@ -52,7 +61,7 @@ class LibraryViewModel @Inject constructor(
                 }
         }
 
-        viewModelScope.launch {
+        playlistsJob = viewModelScope.launch {
             // Load playlists with song count
             playlistDao.getAllPlaylistsWithCount()
                 .collect { playlistWithCounts ->
@@ -66,7 +75,7 @@ class LibraryViewModel @Inject constructor(
                 }
         }
 
-        viewModelScope.launch {
+        downloadedSongsJob = viewModelScope.launch {
             // Load downloaded songs
             downloadDao.getDownloadsWithSongs()
                 .collect { downloadWithSongs ->

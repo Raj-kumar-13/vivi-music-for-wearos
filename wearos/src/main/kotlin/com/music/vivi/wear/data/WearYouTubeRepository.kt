@@ -122,7 +122,10 @@ class WearYouTubeRepository @Inject constructor(
             id = videoId,
             title = videoDetails?.title ?: "Unknown",
             artist = videoDetails?.author,
-            thumbnailUrl = videoDetails?.thumbnail?.thumbnails?.maxByOrNull { it.height ?: 0 }?.url,
+            thumbnailUrl = videoDetails?.thumbnail?.thumbnails
+                ?.filter { (it.height ?: 0) <= 200 }
+                ?.maxByOrNull { it.height ?: 0 }?.url
+                ?: videoDetails?.thumbnail?.thumbnails?.minByOrNull { it.height ?: 0 }?.url,
             duration = videoDetails?.lengthSeconds?.toLongOrNull()
         )
     }

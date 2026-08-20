@@ -84,7 +84,7 @@ fun LibraryScreen(
                     )
                 }
 
-                items(recentSongs.size) { index ->
+                items(recentSongs.size, key = { recentSongs[it].id }) { index ->
                     val song = recentSongs[index]
                     SongCard(
                         song = song,
@@ -105,7 +105,7 @@ fun LibraryScreen(
                     )
                 }
 
-                items(playlists.size) { index ->
+                items(playlists.size, key = { playlists[it].id }) { index ->
                     val playlist = playlists[index]
                     PlaylistCard(
                         playlistName = playlist.name,
@@ -127,7 +127,7 @@ fun LibraryScreen(
                     )
                 }
 
-                items(downloadedSongs.size) { index ->
+                items(downloadedSongs.size, key = { downloadedSongs[it].id }) { index ->
                     val song = downloadedSongs[index]
                     SongCard(
                         song = song,

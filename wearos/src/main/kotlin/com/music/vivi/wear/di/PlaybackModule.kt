@@ -52,7 +52,12 @@ object PlaybackModule {
     fun provideErrorReporter(): ErrorReporter {
         return object : ErrorReporter {
             override fun showMessage(message: Int) {}
-            override fun logMessage(message: String, category: ErrorReporter.Category, level: ErrorReporter.Level) {}
+            override fun logMessage(message: String, category: ErrorReporter.Category, level: ErrorReporter.Level) {
+                when (level) {
+                    ErrorReporter.Level.Error -> timber.log.Timber.e("[$category] $message")
+                    ErrorReporter.Level.Info -> timber.log.Timber.i("[$category] $message")
+                }
+            }
         }
     }
 }

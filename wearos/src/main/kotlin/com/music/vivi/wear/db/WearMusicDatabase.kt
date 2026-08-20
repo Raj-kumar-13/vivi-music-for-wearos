@@ -1,8 +1,6 @@
 package com.music.vivi.wear.db
 
-import android.content.Context
 import androidx.room.Database
-import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.music.vivi.wear.db.dao.WearDownloadDao
 import com.music.vivi.wear.db.dao.WearPlaybackHistoryDao
@@ -23,32 +21,11 @@ import com.music.vivi.wear.db.entities.WearSongEntity
         WearPlaybackHistoryEntity::class
     ],
     version = 1,
-    exportSchema = false
+    exportSchema = true
 )
 abstract class WearMusicDatabase : RoomDatabase() {
     abstract fun songDao(): WearSongDao
     abstract fun playlistDao(): WearPlaylistDao
     abstract fun downloadDao(): WearDownloadDao
     abstract fun playbackHistoryDao(): WearPlaybackHistoryDao
-
-    companion object {
-        private const val DATABASE_NAME = "wear_music.db"
-
-        @Volatile
-        private var INSTANCE: WearMusicDatabase? = null
-
-        fun getDatabase(context: Context): WearMusicDatabase {
-            return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    WearMusicDatabase::class.java,
-                    DATABASE_NAME
-                )
-                    .fallbackToDestructiveMigration()
-                    .build()
-                INSTANCE = instance
-                instance
-            }
-        }
-    }
 }

@@ -48,7 +48,7 @@ class SettingsViewModel @Inject constructor(
                 _authStatus.value = authStorage.hasAuthCookie()
 
                 // Load version info
-                _versionInfo.value = "0.1.0" // This should come from BuildConfig
+                _versionInfo.value = com.music.vivi.wear.BuildConfig.VERSION_NAME
 
                 Timber.d("Settings loaded successfully")
             } catch (e: Exception) {
@@ -65,13 +65,16 @@ class SettingsViewModel @Inject constructor(
         )
         val currentIndex = qualities.indexOf(_audioQuality.value)
         val nextIndex = (currentIndex + 1) % qualities.size
-        _audioQuality.value = qualities[nextIndex]
+        val previousValue = _audioQuality.value
+        val newValue = qualities[nextIndex]
 
         viewModelScope.launch {
             try {
-                authStorage.saveAudioQuality(_audioQuality.value)
-                Timber.d("Audio quality changed to ${_audioQuality.value}")
+                authStorage.saveAudioQuality(newValue)
+                _audioQuality.value = newValue
+                Timber.d("Audio quality changed to $newValue")
             } catch (e: Exception) {
+                _audioQuality.value = previousValue
                 Timber.e(e, "Failed to save audio quality")
             }
         }
@@ -81,13 +84,16 @@ class SettingsViewModel @Inject constructor(
         val caps = listOf(512L, 1024L, 2048L, 3072L) // 512MB, 1GB, 2GB, 3GB
         val currentIndex = caps.indexOf(_downloadSizeCap.value)
         val nextIndex = (currentIndex + 1) % caps.size
-        _downloadSizeCap.value = caps[nextIndex]
+        val previousValue = _downloadSizeCap.value
+        val newValue = caps[nextIndex]
 
         viewModelScope.launch {
             try {
-                authStorage.saveDownloadSizeCap(_downloadSizeCap.value)
-                Timber.d("Download size cap changed to ${_downloadSizeCap.value}MB")
+                authStorage.saveDownloadSizeCap(newValue)
+                _downloadSizeCap.value = newValue
+                Timber.d("Download size cap changed to ${newValue}MB")
             } catch (e: Exception) {
+                _downloadSizeCap.value = previousValue
                 Timber.e(e, "Failed to save download size cap")
             }
         }

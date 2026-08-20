@@ -5,6 +5,10 @@ import android.os.PowerManager
 import dagger.hilt.android.HiltAndroidApp
 import com.music.vivi.wear.worker.CleanupScheduler
 import com.music.vivi.wear.network.ConnectivityManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -14,18 +18,23 @@ class WearApplication : Application() {
     @Inject
     lateinit var connectivityManager: ConnectivityManager
 
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
     override fun onCreate() {
         super.onCreate()
+        Timber.plant(Timber.DebugTree())
         Timber.d("Vivi Wear Application starting")
 
-        // Initialize connectivity manager for network awareness
-        connectivityManager.initialize()
-
-        // Schedule weekly library cleanup with battery optimization
-        CleanupScheduler.scheduleWeeklyCleanup(this)
-
-        // Check battery optimization status
-        checkBatteryOptimization()
+        // Move non-critical init off the main thread to avoid blocking first frame
+        appScope.launch {
+            connectivityManager.initialize()
+        }
+        appScope.launch {
+            CleanupScheduler.scheduleWeeklyCleanup(this@WearApplication)
+        }
+        appScope.launch {
+            checkBatteryOptimization()
+        }
     }
 
     private fun checkBatteryOptimization() {

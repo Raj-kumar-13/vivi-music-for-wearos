@@ -4,6 +4,8 @@ import android.content.Context
 import android.media.AudioDeviceCallback
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
+import android.os.Handler
+import android.os.Looper
 import androidx.media3.common.Player
 
 /**
@@ -29,7 +31,7 @@ class BluetoothRouteObserver(
     }
 
     fun register() {
-        audioManager.registerAudioDeviceCallback(audioDeviceCallback, null)
+        audioManager.registerAudioDeviceCallback(audioDeviceCallback, Handler(Looper.getMainLooper()))
     }
 
     fun unregister() {

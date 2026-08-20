@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.map
 import okhttp3.OkHttpClient
 import timber.log.Timber
 import java.io.File
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import java.util.concurrent.Executors
@@ -36,19 +37,24 @@ class WearDownloadManager @Inject constructor(
 
     companion object {
         private const val STREAM_CACHE_SIZE = 200L * 1024 * 1024 // 200MB for streaming
+        private const val DOWNLOAD_CACHE_SIZE = 500L * 1024 * 1024 // 500MB for downloads
         private const val DOWNLOAD_CACHE_NAME = "wear_downloads"
         private const val STREAM_CACHE_NAME = "wear_stream_cache"
         private const val MAX_PARALLEL_DOWNLOADS = 1 // Conservative for battery
     }
 
-    private val _streamCache: Cache by lazy {
-        val streamCacheDir = File(context.cacheDir, STREAM_CACHE_NAME)
-        SimpleCache(
-            streamCacheDir,
-            LeastRecentlyUsedCacheEvictor(STREAM_CACHE_SIZE),
-            StandaloneDatabaseProvider(context)
-        )
-    }
+    private val databaseProvider = StandaloneDatabaseProvider(context)
+
+    private val okHttpClient = OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .callTimeout(5, TimeUnit.MINUTES)
+        .build()
+
+    @Volatile
+    private var _streamCache: Cache? = null
+    private val streamCacheLock = Any()
 
     lateinit var downloadManager: DownloadManager
         private set
@@ -57,8 +63,10 @@ class WearDownloadManager @Inject constructor(
     private val _downloads = MutableStateFlow<Map<String, Download>>(emptyMap())
     val downloads = _downloads.asStateFlow()
 
-    init {
-        initialize()
+    private fun ensureInitialized() {
+        if (!::downloadManager.isInitialized) {
+            initialize()
+        }
     }
 
     private fun initialize() {
@@ -66,10 +74,9 @@ class WearDownloadManager @Inject constructor(
             val downloadDirectory = File(context.getExternalFilesDir(null), DOWNLOAD_CACHE_NAME)
             downloadDirectory.mkdirs()
 
-            val databaseProvider = StandaloneDatabaseProvider(context)
             val downloadCache = SimpleCache(
                 downloadDirectory,
-                LeastRecentlyUsedCacheEvictor(500 * 1024 * 1024),
+                LeastRecentlyUsedCacheEvictor(DOWNLOAD_CACHE_SIZE),
                 databaseProvider
             )
 
@@ -77,7 +84,7 @@ class WearDownloadManager @Inject constructor(
                 context,
                 databaseProvider,
                 downloadCache,
-                OkHttpDataSource.Factory(OkHttpClient()),
+                OkHttpDataSource.Factory(okHttpClient),
                 Executors.newSingleThreadExecutor()
             ).apply {
                 maxParallelDownloads = MAX_PARALLEL_DOWNLOADS
@@ -113,12 +120,10 @@ class WearDownloadManager @Inject constructor(
      * Download a song for offline playback.
      */
     fun downloadSong(songId: String, streamUrl: String, title: String) {
-        if (!::downloadManager.isInitialized) {
-            initialize()
-        }
+        ensureInitialized()
 
         val request = DownloadRequest.Builder(songId, android.net.Uri.parse(streamUrl))
-            .setData(title.toByteArray())
+            .setData(title.toByteArray(Charsets.UTF_8))
             .build()
 
         downloadManager.addDownload(request)
@@ -130,9 +135,7 @@ class WearDownloadManager @Inject constructor(
      * Remove a downloaded song.
      */
     fun removeDownload(songId: String) {
-        if (!::downloadManager.isInitialized) {
-            initialize()
-        }
+        ensureInitialized()
 
         downloadManager.removeDownload(songId)
         Timber.d("Removed download for song: $songId")
@@ -156,16 +159,20 @@ class WearDownloadManager @Inject constructor(
      * Get the stream cache for streaming playback.
      */
     fun getStreamCache(): Cache {
-        return _streamCache
+        return _streamCache ?: synchronized(streamCacheLock) {
+            _streamCache ?: SimpleCache(
+                File(context.cacheDir, STREAM_CACHE_NAME),
+                LeastRecentlyUsedCacheEvictor(STREAM_CACHE_SIZE),
+                databaseProvider
+            ).also { _streamCache = it }
+        }
     }
 
     /**
      * Get the total size of all downloads in bytes.
      */
     fun getTotalDownloadSize(): Long {
-        if (!::downloadManager.isInitialized) {
-            initialize()
-        }
+        ensureInitialized()
 
         var totalSize = 0L
         _downloads.value.values.forEach { download ->
@@ -178,9 +185,7 @@ class WearDownloadManager @Inject constructor(
      * Get the number of downloaded songs.
      */
     fun getDownloadCount(): Int {
-        if (!::downloadManager.isInitialized) {
-            initialize()
-        }
+        ensureInitialized()
 
         return _downloads.value.size
     }
@@ -192,6 +197,9 @@ class WearDownloadManager @Inject constructor(
         if (::downloadManager.isInitialized) {
             downloadManager.release()
         }
-        _streamCache.release()
+        synchronized(streamCacheLock) {
+            _streamCache?.release()
+            _streamCache = null
+        }
     }
 }

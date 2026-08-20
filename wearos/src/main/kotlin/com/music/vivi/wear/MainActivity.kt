@@ -51,30 +51,46 @@ fun ViviWearApp() {
             NowPlayingScreen(
                 viewModel = playerViewModel,
                 onNavigateToLibrary = {
-                    navController.navigate("library")
+                    navController.navigate("library") {
+                        launchSingleTop = true
+                    }
                 }
             )
         }
         composable("library") {
             LibraryScreen(
                 onNavigateToSearch = {
-                    navController.navigate("search")
+                    navController.navigate("search") {
+                        launchSingleTop = true
+                    }
                 },
                 onNavigateToPlaylist = { playlistId ->
-                    navController.navigate("playlist/$playlistId")
+                    navController.navigate("playlist/$playlistId") {
+                        launchSingleTop = true
+                    }
                 },
                 onNavigateToNowPlaying = {
-                    navController.navigate("now_playing")
+                    navController.navigate("now_playing") {
+                        popUpTo("now_playing") { inclusive = true }
+                        launchSingleTop = true
+                    }
                 },
                 onNavigateToDownloads = {
-                    navController.navigate("downloads")
+                    navController.navigate("downloads") {
+                        launchSingleTop = true
+                    }
                 },
                 onNavigateToSettings = {
-                    navController.navigate("settings")
+                    navController.navigate("settings") {
+                        launchSingleTop = true
+                    }
                 },
                 onSongClick = { song ->
                     playerViewModel.playSong(song)
-                    navController.navigate("now_playing")
+                    navController.navigate("now_playing") {
+                        popUpTo("now_playing") { inclusive = true }
+                        launchSingleTop = true
+                    }
                 }
             )
         }
@@ -96,7 +112,10 @@ fun ViviWearApp() {
             SearchScreen(
                 onSongClick = { song ->
                     playerViewModel.playSong(song)
-                    navController.navigate("now_playing")
+                    navController.navigate("now_playing") {
+                        popUpTo("now_playing") { inclusive = true }
+                        launchSingleTop = true
+                    }
                 },
                 onNavigateBack = {
                     navController.popBackStack()
@@ -109,7 +128,10 @@ fun ViviWearApp() {
                 playlistId = playlistId,
                 onSongClick = { song ->
                     playerViewModel.playSong(song)
-                    navController.navigate("now_playing")
+                    navController.navigate("now_playing") {
+                        popUpTo("now_playing") { inclusive = true }
+                        launchSingleTop = true
+                    }
                 },
                 onNavigateBack = {
                     navController.popBackStack()

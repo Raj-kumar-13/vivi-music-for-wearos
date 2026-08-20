@@ -91,7 +91,7 @@ fun SearchScreen(
 
             // Results
             if (searchResults.isNotEmpty()) {
-                items(searchResults.size) { index ->
+                items(searchResults.size, key = { searchResults[it].id }) { index ->
                     val song = searchResults[index]
                     SongCard(
                         song = song,

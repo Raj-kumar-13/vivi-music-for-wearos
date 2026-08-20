@@ -49,6 +49,12 @@ android {
         buildConfig = true
     }
 
+    composeCompiler {
+        // Enable strong skipping: skips recomposition of composables with unchanged params
+        // even if params are not formally "stable"
+        enableStrongSkippingMode = true
+    }
+
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
@@ -65,7 +71,6 @@ dependencies {
     implementation(libs.wear.compose.material)
     implementation(libs.wear.compose.foundation)
     implementation(libs.wear.compose.navigation)
-    implementation(libs.wear.tooling.preview)
     implementation(libs.activity)
 
     // Playback
@@ -73,15 +78,11 @@ dependencies {
     implementation(libs.media3.session)
     implementation(libs.media3.okhttp)
 
-    // Horologist Media Toolkit
-    implementation(libs.horologist.media.ui)
-    implementation(libs.horologist.media.data)
+    // Horologist (only used modules)
     implementation(libs.horologist.media3.backend)
-    implementation(libs.horologist.audio.ui)
     implementation(libs.horologist.compose.layout)
     implementation(libs.horologist.network.awareness)
     implementation(libs.horologist.tiles)
-    implementation(libs.horologist.networks.ui)
 
     // Wear OS Tiles & ProtoLayout
     implementation(libs.androidx.wear.tiles)
@@ -100,15 +101,7 @@ dependencies {
     ksp(libs.room.compiler)
     implementation(libs.room.ktx)
 
-    // Networking (reuse from innertube)
-    implementation(libs.ktor.client.core)
-    implementation(libs.ktor.client.okhttp)
-    implementation(libs.ktor.client.content.negotiation)
-    implementation(libs.ktor.serialization.json)
-
-    // Image loading
-    implementation(libs.coil)
-    implementation(libs.coil.network.okhttp)
+    // Networking provided transitively via :innertube
 
     // Logging
     implementation(libs.timber)

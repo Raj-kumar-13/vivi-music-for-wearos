@@ -31,6 +31,7 @@ fun NowPlayingScreen(
     val currentSong by viewModel.currentSong.collectAsState()
     val isPlaying by viewModel.isPlaying.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
     val isOfflineMode by networkObserver.isOfflineMode.collectAsState()
 
     ScreenScaffold(
@@ -45,36 +46,45 @@ fun NowPlayingScreen(
         ) {
             if (isLoading) {
                 CircularProgressIndicator()
-            } else if (currentSong != null) {
-                Text(
-                    text = currentSong!!.title,
-                    style = MaterialTheme.typography.body1,
-                    maxLines = 2
-                )
-                currentSong!!.artist?.let {
+            } else {
+                val song = currentSong
+                if (song != null) {
                     Text(
-                        text = it,
-                        style = MaterialTheme.typography.caption1
+                        text = song.title,
+                        style = MaterialTheme.typography.body1,
+                        maxLines = 2
+                    )
+                    song.artist?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.caption1
+                        )
+                    }
+
+                    Button(
+                        onClick = { viewModel.togglePlayPause() },
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        Text(if (isPlaying) "Pause" else "Play")
+                    }
+                } else {
+                    error?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.caption1,
+                            color = MaterialTheme.colors.error
+                        )
+                    } ?: Text(
+                        text = if (isOfflineMode) {
+                            "Offline mode - only downloads available"
+                        } else {
+                            "No media playing"
+                        },
+                        style = MaterialTheme.typography.body2
                     )
                 }
-                
-                Button(
-                    onClick = { viewModel.togglePlayPause() },
-                    modifier = Modifier.padding(top = 8.dp)
-                ) {
-                    Text(if (isPlaying) "Pause" else "Play")
-                }
-            } else {
-                Text(
-                    text = if (isOfflineMode) {
-                        "Offline mode - only downloads available"
-                    } else {
-                        "No media playing"
-                    },
-                    style = MaterialTheme.typography.body2
-                )
             }
-            
+
             Button(
                 onClick = onNavigateToLibrary,
                 modifier = Modifier.padding(top = 8.dp)

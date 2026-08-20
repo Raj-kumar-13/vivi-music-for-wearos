@@ -25,13 +25,17 @@ class AuthSyncListenerService : WearableListenerService() {
     }
 
     override fun onDataChanged(dataEvents: DataEventBuffer) {
-        for (event in dataEvents) {
-            if (event.type == DataEvent.TYPE_CHANGED) {
-                val path = event.dataItem.uri.path
-                if (path == AUTH_DATA_PATH) {
-                    handleAuthData(event.dataItem)
+        try {
+            for (event in dataEvents) {
+                if (event.type == DataEvent.TYPE_CHANGED) {
+                    val path = event.dataItem.uri.path
+                    if (path == AUTH_DATA_PATH) {
+                        handleAuthData(event.dataItem)
+                    }
                 }
             }
+        } finally {
+            dataEvents.release()
         }
     }
 
@@ -55,9 +59,18 @@ class AuthSyncListenerService : WearableListenerService() {
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
         if (messageEvent.path == AUTH_DATA_PATH) {
-            val cookie = String(messageEvent.data)
-            authStorage.storeAuthCookie(cookie)
-            Timber.d("Auth received via message from phone")
+            try {
+                val data = messageEvent.data
+                if (data == null || data.isEmpty()) {
+                    Timber.w("Received empty auth message data")
+                    return
+                }
+                val cookie = String(data)
+                authStorage.storeAuthCookie(cookie)
+                Timber.d("Auth received via message from phone")
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to process auth message")
+            }
         }
     }
 }

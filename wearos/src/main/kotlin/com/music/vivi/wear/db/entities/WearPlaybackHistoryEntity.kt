@@ -16,7 +16,8 @@ import androidx.room.PrimaryKey
         )
     ],
     indices = [
-        Index(value = ["songId"])
+        Index(value = ["songId"]),
+        Index(value = ["playedAt"])
     ]
 )
 data class WearPlaybackHistoryEntity(

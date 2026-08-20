@@ -89,7 +89,7 @@ fun DownloadsScreen(
 
             // Downloads List
             if (downloads.isNotEmpty()) {
-                items(downloads.size) { index ->
+                items(downloads.size, key = { downloads[it].song.id }) { index ->
                     val download = downloads[index]
                     DownloadCard(
                         song = download.song,
@@ -134,7 +134,7 @@ fun StorageUsageCard(
 ) {
 
     Card(
-        onClick = {},
+        onClick = { /* Storage info - not actionable */ },
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp)
@@ -217,12 +217,13 @@ fun DownloadCard(
     }
 }
 
+private val bytesFormat = DecimalFormat("#.#")
+
 fun formatBytes(bytes: Long): String {
-    val decimalFormat = DecimalFormat("#.#")
     return when {
         bytes < 1024 -> "$bytes B"
-        bytes < 1024 * 1024 -> "${decimalFormat.format(bytes / 1024.0)} KB"
-        bytes < 1024 * 1024 * 1024 -> "${decimalFormat.format(bytes / (1024.0 * 1024.0))} MB"
-        else -> "${decimalFormat.format(bytes / (1024.0 * 1024.0 * 1024.0))} GB"
+        bytes < 1024 * 1024 -> "${bytesFormat.format(bytes / 1024.0)} KB"
+        bytes < 1024 * 1024 * 1024 -> "${bytesFormat.format(bytes / (1024.0 * 1024.0))} MB"
+        else -> "${bytesFormat.format(bytes / (1024.0 * 1024.0 * 1024.0))} GB"
     }
 }

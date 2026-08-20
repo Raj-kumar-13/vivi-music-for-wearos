@@ -1,6 +1,7 @@
 package com.music.vivi.wear.di
 
 import android.content.Context
+import androidx.room.Room
 import com.music.vivi.wear.db.WearMusicDatabase
 import com.music.vivi.wear.db.dao.WearDownloadDao
 import com.music.vivi.wear.db.dao.WearPlaybackHistoryDao
@@ -22,7 +23,13 @@ object DatabaseModule {
     fun provideWearMusicDatabase(
         @ApplicationContext context: Context
     ): WearMusicDatabase {
-        return WearMusicDatabase.getDatabase(context)
+        return Room.databaseBuilder(
+            context.applicationContext,
+            WearMusicDatabase::class.java,
+            "wear_music.db"
+        )
+            .fallbackToDestructiveMigration()
+            .build()
     }
 
     @Provides

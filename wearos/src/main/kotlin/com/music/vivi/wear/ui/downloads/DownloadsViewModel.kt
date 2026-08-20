@@ -84,8 +84,8 @@ class DownloadsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val usedBytes = downloadManager.getTotalDownloadSize()
-                // For Wear OS, we'll use a conservative estimate of available storage
-                val totalBytes = 2L * 1024 * 1024 * 1024 // Assume 2GB total
+                val stat = android.os.StatFs(context.filesDir.absolutePath)
+                val totalBytes = stat.totalBytes
                 _storageUsage.value = StorageUsage(usedBytes, totalBytes)
             } catch (e: Exception) {
                 Timber.e(e, "Failed to load storage usage")
@@ -118,13 +118,19 @@ class DownloadsViewModel @Inject constructor(
                 _isLoading.value = true
                 val workRequest = androidx.work.OneTimeWorkRequestBuilder<LibraryCleanupWorker>()
                     .build()
-                androidx.work.WorkManager.getInstance(context).enqueue(workRequest)
+                val workManager = androidx.work.WorkManager.getInstance(context)
+                workManager.enqueue(workRequest)
                 Timber.d("Manual cleanup triggered")
-                kotlinx.coroutines.delay(2000)
-                refreshDownloads()
+                // Observe work completion instead of arbitrary delay
+                workManager.getWorkInfoByIdFlow(workRequest.id).collect { workInfo ->
+                    if (workInfo != null && workInfo.state.isFinished) {
+                        refreshDownloads()
+                        _isLoading.value = false
+                        return@collect
+                    }
+                }
             } catch (e: Exception) {
                 Timber.e(e, "Manual cleanup failed")
-            } finally {
                 _isLoading.value = false
             }
         }

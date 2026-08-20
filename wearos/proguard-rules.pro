@@ -1,29 +1,29 @@
-# Keep Compose classes
--keep class androidx.compose.** { *; }
--keep class androidx.wear.compose.** { *; }
-
-# Keep Horologist classes
--keep class com.google.android.horologist.** { *; }
-
-# Keep Room entities
+# Room entities (needed for reflection-based DB access)
 -keep class com.music.vivi.wear.db.entities.** { *; }
 
-# Keep Media3 classes
--keep class androidx.media3.** { *; }
+# Keep InnerTube models (serialization)
+-keep class com.music.innertube.models.** { *; }
+-keep class com.music.innertube.YouTube { *; }
 
-# Keep Ktor classes
--keep class io.ktor.** { *; }
+# Ktor (serialization/reflection)
+-keep class io.ktor.serialization.** { *; }
+-dontwarn io.ktor.**
 
-# Keep InnerTube models
--keep class com.music.innertube.** { *; }
+# Media3 (service binding)
+-keep class androidx.media3.session.MediaSessionService { *; }
+-keep class androidx.media3.exoplayer.offline.Download { *; }
+-dontwarn androidx.media3.**
 
-# Keep Timber
--keep class timber.log.Timber { *; }
--keepclassmembers class * {
-    *** Timber$Tree*;
-}
+# Hilt-generated classes
+-keep class dagger.hilt.** { *; }
+-keep class * extends dagger.hilt.android.internal.managers.ViewComponentManager$FragmentContextWrapper { *; }
+
+# Strip debug/verbose logging in release
 -assumenosideeffects class timber.log.Timber {
     public static *** d(...);
     public static *** v(...);
     public static *** i(...);
 }
+
+# Compose keeps are handled by the Compose compiler plugin — no blanket keeps needed
+-dontwarn androidx.compose.**

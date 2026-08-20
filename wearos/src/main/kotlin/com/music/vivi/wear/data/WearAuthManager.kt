@@ -15,23 +15,27 @@ class WearAuthManager @Inject constructor(
     private val authStorage: WearAuthStorage
 ) {
 
+    private val lock = Any()
+
     /**
      * Inject the auth cookie into the :innertube YouTube client.
      * This should be called before any API request.
      */
     fun injectAuth() {
-        try {
-            val cookie = authStorage.getAuthCookie()
-            if (cookie != null) {
-                YouTube.cookie = cookie
-                Timber.d("Auth cookie injected successfully")
-            } else {
-                Timber.w("No auth cookie found")
+        synchronized(lock) {
+            try {
+                val cookie = authStorage.getAuthCookie()
+                if (cookie != null) {
+                    YouTube.cookie = cookie
+                    Timber.d("Auth cookie injected successfully")
+                } else {
+                    Timber.w("No auth cookie found")
+                    YouTube.cookie = null
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to inject auth cookie")
                 YouTube.cookie = null
             }
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to inject auth cookie")
-            YouTube.cookie = null
         }
     }
 
@@ -46,17 +50,21 @@ class WearAuthManager @Inject constructor(
      * Clear auth (e.g., after 401/403 error).
      */
     fun clearAuth() {
-        authStorage.clearAuthCookie()
-        YouTube.cookie = null
-        Timber.d("Auth cleared")
+        synchronized(lock) {
+            authStorage.clearAuthCookie()
+            YouTube.cookie = null
+            Timber.d("Auth cleared")
+        }
     }
 
     /**
      * Store auth cookie (from phone sync).
      */
     fun storeAuth(cookie: String) {
-        authStorage.storeAuthCookie(cookie)
-        YouTube.cookie = cookie
-        Timber.d("Auth stored successfully")
+        synchronized(lock) {
+            authStorage.storeAuthCookie(cookie)
+            YouTube.cookie = cookie
+            Timber.d("Auth stored successfully")
+        }
     }
 }

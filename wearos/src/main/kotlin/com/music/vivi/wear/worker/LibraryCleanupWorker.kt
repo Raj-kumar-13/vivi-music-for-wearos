@@ -96,24 +96,25 @@ class LibraryCleanupWorker @AssistedInject constructor(
 
     private suspend fun enforceDownloadSizeCap() {
         try {
-            val currentSize = downloadManager.getTotalDownloadSize()
+            var remainingSize = downloadManager.getTotalDownloadSize()
             val sizeCapBytes = DEFAULT_DOWNLOAD_SIZE_CAP_MB * 1024 * 1024
 
-            if (currentSize > sizeCapBytes) {
-                Timber.w("Download size ($currentSize bytes) exceeds cap ($sizeCapBytes bytes)")
+            if (remainingSize > sizeCapBytes) {
+                Timber.w("Download size ($remainingSize bytes) exceeds cap ($sizeCapBytes bytes)")
 
                 // Remove oldest downloads until under the cap
                 val downloadsList = downloadDao.getAllDownloadsSortedByDate()
                 var removedCount = 0
 
                 for (download in downloadsList) {
-                    if (downloadManager.getTotalDownloadSize() <= sizeCapBytes) {
+                    if (remainingSize <= sizeCapBytes) {
                         break
                     }
 
                     try {
                         downloadManager.removeDownload(download.songId)
                         downloadDao.deleteDownloadById(download.songId)
+                        remainingSize -= download.sizeBytes
                         removedCount++
                     } catch (e: Exception) {
                         Timber.e(e, "Failed to remove download for size cap enforcement: ${download.songId}")
@@ -130,9 +131,12 @@ class LibraryCleanupWorker @AssistedInject constructor(
     private suspend fun cleanupOldPlaybackHistory() {
         try {
             // Keep only the last 100 playback history entries
-            val allHistory = playbackHistoryDao.getAllHistory()
-            if (allHistory.size > 100) {
-                val toRemove = allHistory.dropLast(100)
+            val count = playbackHistoryDao.getHistoryCount()
+            if (count > 100) {
+                // getAllHistory() returns ordered by playedAt DESC (newest first)
+                // drop(100) skips the 100 newest, giving us the old entries to delete
+                val allHistory = playbackHistoryDao.getAllHistory()
+                val toRemove = allHistory.drop(100)
                 toRemove.forEach { history ->
                     playbackHistoryDao.deleteHistoryById(history.id)
                 }

@@ -11,6 +11,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -23,6 +25,7 @@ class ConnectivityManager @Inject constructor(
     private val networkRepository: NetworkRepository
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var collectionJob: Job? = null
     
     private val _networks = MutableStateFlow(Networks(null, emptyList()))
     val networks: StateFlow<Networks> = _networks.asStateFlow()
@@ -35,7 +38,7 @@ class ConnectivityManager @Inject constructor(
 
     fun initialize() {
         Timber.d("Initializing ConnectivityManager")
-        scope.launch {
+        collectionJob = scope.launch {
             networkRepository.networkStatus.collect { status ->
                 _networks.value = status
                 updateConnectivityMode(status)
@@ -53,9 +56,11 @@ class ConnectivityManager @Inject constructor(
 
     fun stopObserving() {
         Timber.d("Stopping ConnectivityManager observations")
+        collectionJob?.cancel()
+        collectionJob = null
     }
 
     fun release() {
-        // Cleanup resources
+        scope.cancel()
     }
 }

@@ -86,7 +86,7 @@ fun PlaylistScreen(
 
             // Playlist Songs
             if (playlistSongs.isNotEmpty()) {
-                items(playlistSongs.size) { index ->
+                items(playlistSongs.size, key = { playlistSongs[it].id }) { index ->
                     val song = playlistSongs[index]
                     SongCard(
                         song = song,

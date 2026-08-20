@@ -6,7 +6,6 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
@@ -36,7 +35,11 @@ class WearDownloadNotificationPresenter(
         val totalDownloads = downloads.size
         val completedDownloads = downloads.count { it.state == Download.STATE_COMPLETED }
         val progress = if (totalDownloads > 0) {
-            (completedDownloads * 100) / totalDownloads
+            val perDownloadProgress = downloads.sumOf { download ->
+                if (download.state == Download.STATE_COMPLETED) 100.0
+                else download.percentDownloaded.toDouble()
+            }
+            (perDownloadProgress / totalDownloads).toInt()
         } else {
             0
         }
@@ -52,17 +55,15 @@ class WearDownloadNotificationPresenter(
     }
 
     private fun createNotificationChannel(channelId: String) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "Wear OS Downloads",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "Music download progress"
-            }
-
-            val notificationManager = context.getSystemService(NotificationManager::class.java)
-            notificationManager?.createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            channelId,
+            "Wear OS Downloads",
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = "Music download progress"
         }
+
+        val notificationManager = context.getSystemService(NotificationManager::class.java)
+        notificationManager?.createNotificationChannel(channel)
     }
 }
