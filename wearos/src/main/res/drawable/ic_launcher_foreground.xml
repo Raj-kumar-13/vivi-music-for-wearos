@@ -3,7 +3,20 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- Outer disc ring -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M31,31L77,54L31,77V31Z" />
+        android:pathData="M54,24C37.43,24 24,37.43 24,54C24,70.57 37.43,84 54,84C70.57,84 84,70.57 84,54C84,37.43 70.57,24 54,24ZM54,78C40.75,78 30,67.25 30,54C30,40.75 40.75,30 54,30C67.25,30 78,40.75 78,54C78,67.25 67.25,78 54,78Z" />
+    <!-- Inner circle (center hole) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,46C49.58,46 46,49.58 46,54C46,58.42 49.58,62 54,62C58.42,62 62,58.42 62,54C62,49.58 58.42,46 54,46Z" />
+    <!-- Music note stem -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M58,38V54H62V38H58Z" />
+    <!-- Music note flag -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M62,38C62,38 68,40 68,44C68,46 66,47 64,46L62,44V38Z" />
 </vector>

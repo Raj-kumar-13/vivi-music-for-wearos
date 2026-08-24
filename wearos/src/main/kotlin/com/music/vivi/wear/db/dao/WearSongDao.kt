@@ -17,6 +17,9 @@ interface WearSongDao {
     @Query("SELECT * FROM wear_song")
     fun getAllSongs(): Flow<List<WearSongEntity>>
 
+    @Query("SELECT * FROM wear_song")
+    suspend fun getAllSongsList(): List<WearSongEntity>
+
     @Query("SELECT * FROM wear_song ORDER BY cachedAt DESC LIMIT :limit")
     fun getRecentSongs(limit: Int = 50): Flow<List<WearSongEntity>>
 

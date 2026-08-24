@@ -134,7 +134,8 @@ fun StorageUsageCard(
 ) {
 
     Card(
-        onClick = { /* Storage info - not actionable */ },
+        onClick = { },
+        enabled = false,
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp)

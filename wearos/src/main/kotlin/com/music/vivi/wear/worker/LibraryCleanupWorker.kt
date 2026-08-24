@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.music.vivi.wear.auth.WearAuthStorage
 import com.music.vivi.wear.db.dao.WearDownloadDao
 import com.music.vivi.wear.db.dao.WearPlaybackHistoryDao
 import com.music.vivi.wear.db.dao.WearSongDao
@@ -25,7 +26,8 @@ class LibraryCleanupWorker @AssistedInject constructor(
     private val downloadDao: WearDownloadDao,
     private val playbackHistoryDao: WearPlaybackHistoryDao,
     private val songDao: WearSongDao,
-    private val downloadManager: WearDownloadManager
+    private val downloadManager: WearDownloadManager,
+    private val authStorage: WearAuthStorage
 ) : CoroutineWorker(context, workerParams) {
 
     companion object {
@@ -60,14 +62,22 @@ class LibraryCleanupWorker @AssistedInject constructor(
 
     private suspend fun cleanupOrphanedCache() {
         try {
-            // Remove cache entries that don't have corresponding database entries
             val allDownloads = downloadDao.getAllDownloadsList()
             val downloadIds = allDownloads.map { it.songId }.toSet()
 
-            // This is a simplified implementation
-            // In production, you'd check the actual cache files against the database
-            val orphanedCount = 0 // Placeholder for actual orphan detection
-            Timber.d("Cleaned up $orphanedCount orphaned cache entries")
+            // Remove songs in DB that have no downloads and no recent playback history
+            val allSongs = songDao.getAllSongsList()
+            var orphanedCount = 0
+            for (song in allSongs) {
+                if (song.id !in downloadIds) {
+                    val historyCount = playbackHistoryDao.getHistoryCountForSong(song.id)
+                    if (historyCount == 0) {
+                        songDao.deleteSongById(song.id)
+                        orphanedCount++
+                    }
+                }
+            }
+            Timber.d("Cleaned up $orphanedCount orphaned song entries")
         } catch (e: Exception) {
             Timber.e(e, "Failed to cleanup orphaned cache")
         }
@@ -97,7 +107,8 @@ class LibraryCleanupWorker @AssistedInject constructor(
     private suspend fun enforceDownloadSizeCap() {
         try {
             var remainingSize = downloadManager.getTotalDownloadSize()
-            val sizeCapBytes = DEFAULT_DOWNLOAD_SIZE_CAP_MB * 1024 * 1024
+            val sizeCapMB = authStorage.getDownloadSizeCap() ?: DEFAULT_DOWNLOAD_SIZE_CAP_MB
+            val sizeCapBytes = sizeCapMB * 1024 * 1024
 
             if (remainingSize > sizeCapBytes) {
                 Timber.w("Download size ($remainingSize bytes) exceeds cap ($sizeCapBytes bytes)")

@@ -5,6 +5,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadManager
 import androidx.media3.exoplayer.offline.DownloadService
+import androidx.media3.exoplayer.scheduler.PlatformScheduler
 import androidx.media3.exoplayer.scheduler.Scheduler
 import com.music.vivi.wear.R
 import dagger.hilt.android.AndroidEntryPoint
@@ -30,6 +31,7 @@ class WearDownloadService : DownloadService(
     companion object {
         private const val DOWNLOAD_NOTIFICATION_ID = 1
         private const val DOWNLOAD_NOTIFICATION_CHANNEL_ID = "wear_download_channel"
+        private const val SCHEDULER_JOB_ID = 1001
     }
 
     override fun getDownloadManager(): DownloadManager {
@@ -37,8 +39,8 @@ class WearDownloadService : DownloadService(
         return wearDownloadManager.downloadManager
     }
 
-    override fun getScheduler(): Scheduler? {
-        return null
+    override fun getScheduler(): Scheduler {
+        return PlatformScheduler(this, SCHEDULER_JOB_ID)
     }
 
     override fun getForegroundNotification(

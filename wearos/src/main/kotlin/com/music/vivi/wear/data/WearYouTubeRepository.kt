@@ -13,7 +13,8 @@ import javax.inject.Singleton
 
 @Singleton
 class WearYouTubeRepository @Inject constructor(
-    private val authManager: WearAuthManager
+    private val authManager: WearAuthManager,
+    private val authStorage: com.music.vivi.wear.auth.WearAuthStorage
 ) {
 
     /**
@@ -63,11 +64,18 @@ class WearYouTubeRepository @Inject constructor(
 
             if (result.isSuccess) {
                 val response = result.getOrNull()
-                val streamUrl = response?.streamingData?.adaptiveFormats
+                val audioFormats = response?.streamingData?.adaptiveFormats
                     ?.filter { it.isAudio }
                     ?.sortedBy { it.bitrate ?: Int.MAX_VALUE }
-                    ?.firstOrNull()?.url
-                    ?: response?.streamingData?.formats?.firstOrNull { it.url != null }?.url
+                val quality = authStorage.getAudioQuality()
+                val streamUrl = when (quality) {
+                    com.music.vivi.wear.network.StreamingQuality.HIGH ->
+                        audioFormats?.lastOrNull()?.url // highest bitrate
+                    com.music.vivi.wear.network.StreamingQuality.MEDIUM ->
+                        audioFormats?.getOrNull(audioFormats.size / 2)?.url // middle bitrate
+                    else ->
+                        audioFormats?.firstOrNull()?.url // lowest bitrate (default for WearOS)
+                } ?: response?.streamingData?.formats?.firstOrNull { it.url != null }?.url
 
                 if (streamUrl != null) {
                     Result.success(streamUrl)
