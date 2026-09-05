@@ -50,6 +50,7 @@ playServicesWearable = "18.2.0"
 wearTiles = "1.6.2"
 protolayout = "1.4.2"
 securityCrypto = "1.1.0-alpha06"
+wearInput = "1.2.0"
 
 
 [libraries]
@@ -161,6 +162,7 @@ horologist-network-awareness = { module = "com.google.android.horologist:horolog
 horologist-tiles = { module = "com.google.android.horologist:horologist-tiles", version.ref = "horologist" }
 horologist-networks-ui = { module = "com.google.android.horologist:horologist-network-awareness-ui", version.ref = "horologist" }
 androidx-wear-tiles = { module = "androidx.wear.tiles:tiles", version.ref = "wearTiles" }
+androidx-wear-input = { module = "androidx.wear:wear-input", version.ref = "wearInput" }
 androidx-protolayout-expression = { module = "androidx.wear.protolayout:protolayout-expression", version.ref = "protolayout" }
 androidx-protolayout-material = { module = "androidx.wear.protolayout:protolayout-material", version.ref = "protolayout" }
 play-services-wearable = { module = "com.google.android.gms:play-services-wearable", version.ref = "playServicesWearable" }

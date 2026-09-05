@@ -39,9 +39,13 @@ class ConnectivityManager @Inject constructor(
     fun initialize() {
         Timber.d("Initializing ConnectivityManager")
         collectionJob = scope.launch {
-            networkRepository.networkStatus.collect { status ->
-                _networks.value = status
-                updateConnectivityMode(status)
+            try {
+                networkRepository.networkStatus.collect { status ->
+                    _networks.value = status
+                    updateConnectivityMode(status)
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Error collecting network status")
             }
         }
     }

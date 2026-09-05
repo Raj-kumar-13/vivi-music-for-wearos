@@ -65,6 +65,7 @@ dependencies {
     implementation(libs.wear.compose.material)
     implementation(libs.wear.compose.foundation)
     implementation(libs.wear.compose.navigation)
+    implementation(libs.androidx.wear.input)
     implementation(libs.activity)
     implementation(libs.lifecycle.runtime.compose)
 

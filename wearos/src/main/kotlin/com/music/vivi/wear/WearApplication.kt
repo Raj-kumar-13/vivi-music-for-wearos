@@ -38,13 +38,25 @@ class WearApplication : Application(), Configuration.Provider {
 
         // Move non-critical init off the main thread to avoid blocking first frame
         appScope.launch {
-            connectivityManager.initialize()
+            try {
+                connectivityManager.initialize()
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to initialize ConnectivityManager")
+            }
         }
         appScope.launch {
-            CleanupScheduler.scheduleWeeklyCleanup(this@WearApplication)
+            try {
+                CleanupScheduler.scheduleWeeklyCleanup(this@WearApplication)
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to schedule weekly cleanup")
+            }
         }
         appScope.launch {
-            checkBatteryOptimization()
+            try {
+                checkBatteryOptimization()
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to check battery optimization")
+            }
         }
     }
 

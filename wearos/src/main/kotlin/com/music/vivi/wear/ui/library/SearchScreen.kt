@@ -1,6 +1,7 @@
 package com.music.vivi.wear.ui.library
 
 import android.app.Activity
+import android.app.RemoteInput
 import android.content.Intent
 import android.speech.RecognizerIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -9,22 +10,25 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.wear.input.RemoteInputIntentHelper
 import com.google.android.horologist.compose.layout.ScalingLazyColumn
+import com.google.android.horologist.compose.layout.ScalingLazyColumnDefaults
 import com.google.android.horologist.compose.layout.ScreenScaffold
 import com.google.android.horologist.compose.layout.rememberResponsiveColumnState
-import com.google.android.horologist.compose.layout.ScalingLazyColumnDefaults
 import com.music.vivi.wear.data.models.WearSong
 import com.music.vivi.wear.ui.components.SongCard
 import com.music.vivi.wear.ui.components.WearTimeText
+import timber.log.Timber
 
 @Composable
 fun SearchScreen(
@@ -39,12 +43,49 @@ fun SearchScreen(
     val speechLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val matches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-            val query = matches?.firstOrNull()
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            // Check RemoteInput result first (Wear OS Voice/Keyboard/Smart Reply)
+            val remoteInputResults = RemoteInput.getResultsFromIntent(result.data)
+            val remoteInputQuery = remoteInputResults?.getCharSequence("search_query")?.toString()
+
+            // Check standard RecognizerIntent speech result as fallback
+            val speechMatches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            val speechQuery = speechMatches?.firstOrNull()
+
+            val query = remoteInputQuery ?: speechQuery
             if (!query.isNullOrBlank()) {
                 viewModel.search(query)
             }
+        }
+    }
+
+    fun launchInput() {
+        try {
+            val remoteInput = RemoteInput.Builder("search_query")
+                .setLabel("Search music")
+                .build()
+
+            val intent = RemoteInputIntentHelper.createActionRemoteInputIntent()
+            RemoteInputIntentHelper.putRemoteInputsExtra(intent, listOf(remoteInput))
+            speechLauncher.launch(intent)
+        } catch (e: Exception) {
+            Timber.e(e, "RemoteInputIntentHelper failed, trying RecognizerIntent")
+            try {
+                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Search for music")
+                }
+                speechLauncher.launch(intent)
+            } catch (ex: Exception) {
+                Timber.e(ex, "Failed to launch voice input")
+            }
+        }
+    }
+
+    // Auto-launch voice/text input prompt when opening search if no results yet
+    LaunchedEffect(Unit) {
+        if (searchResults.isEmpty() && !isLoading) {
+            launchInput()
         }
     }
 
@@ -73,21 +114,15 @@ fun SearchScreen(
                 )
             }
 
-            // Voice Search Trigger
+            // Voice or Keyboard Search Trigger
             item {
                 Button(
-                    onClick = {
-                        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                            putExtra(RecognizerIntent.EXTRA_PROMPT, "Search for music")
-                        }
-                        speechLauncher.launch(intent)
-                    },
+                    onClick = { launchInput() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp)
                 ) {
-                    Text("Tap to speak")
+                    Text("Tap to speak or type")
                 }
             }
 

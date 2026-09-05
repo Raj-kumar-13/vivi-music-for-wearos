@@ -50,7 +50,7 @@ fun LibraryScreen(
             columnState = columnState,
             modifier = Modifier.fillMaxSize()
         ) {
-            item(contentType = "header") {
+            item {
                 Text(
                     text = "Library",
                     style = MaterialTheme.typography.title3,
@@ -61,7 +61,7 @@ fun LibraryScreen(
             }
 
             // Voice Search Button
-            item(contentType = "button") {
+            item {
                 Button(
                     onClick = onNavigateToSearch,
                     modifier = Modifier
@@ -74,7 +74,7 @@ fun LibraryScreen(
 
             // Recent Plays Section
             if (recentSongs.isNotEmpty()) {
-                item(contentType = "section_header") {
+                item {
                     Text(
                         text = "Recent",
                         style = MaterialTheme.typography.caption2,
@@ -84,7 +84,7 @@ fun LibraryScreen(
                     )
                 }
 
-                items(recentSongs.size, key = { recentSongs[it].id }, contentType = { "song_card" }) { index ->
+                items(recentSongs.size, key = { recentSongs[it].id }) { index ->
                     val song = recentSongs[index]
                     SongCard(
                         song = song,
@@ -95,7 +95,7 @@ fun LibraryScreen(
 
             // Playlists Section
             if (playlists.isNotEmpty()) {
-                item(contentType = "section_header") {
+                item {
                     Text(
                         text = "Playlists",
                         style = MaterialTheme.typography.caption2,
@@ -105,7 +105,7 @@ fun LibraryScreen(
                     )
                 }
 
-                items(playlists.size, key = { playlists[it].id }, contentType = { "playlist_card" }) { index ->
+                items(playlists.size, key = { playlists[it].id }) { index ->
                     val playlist = playlists[index]
                     PlaylistCard(
                         playlistName = playlist.name,
@@ -117,7 +117,7 @@ fun LibraryScreen(
 
             // Downloads Section
             if (downloadedSongs.isNotEmpty()) {
-                item(contentType = "section_header") {
+                item {
                     Text(
                         text = "Downloads",
                         style = MaterialTheme.typography.caption2,
@@ -127,7 +127,7 @@ fun LibraryScreen(
                     )
                 }
 
-                items(downloadedSongs.size, key = { downloadedSongs[it].id }, contentType = { "song_card" }) { index ->
+                items(downloadedSongs.size, key = { downloadedSongs[it].id }) { index ->
                     val song = downloadedSongs[index]
                     SongCard(
                         song = song,
@@ -137,7 +137,7 @@ fun LibraryScreen(
             }
 
             // Navigation Buttons
-            item(contentType = "button") {
+            item {
                 Button(
                     onClick = onNavigateToNowPlaying,
                     modifier = Modifier
@@ -148,7 +148,7 @@ fun LibraryScreen(
                 }
             }
 
-            item(contentType = "button") {
+            item {
                 Button(
                     onClick = onNavigateToDownloads,
                     modifier = Modifier
@@ -159,7 +159,7 @@ fun LibraryScreen(
                 }
             }
 
-            item(contentType = "button") {
+            item {
                 Button(
                     onClick = onNavigateToSettings,
                     modifier = Modifier
